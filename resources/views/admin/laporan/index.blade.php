@@ -33,7 +33,6 @@
                     <label for="end_date" class="mr-2">Sampai Tanggal:</label>
                     <input type="date" name="end_date" class="form-control" value="{{ $endDate }}">
                 </div>
-                {{-- Filter berdasarkan sekolah --}}
                 <div class="form-group mx-sm-3 mb-2">
                     <label for="sekolah_id" class="mr-2">Sekolah:</label>
                     <select name="sekolah_id" class="form-control">
@@ -47,12 +46,11 @@
                 </div>
                 <button type="submit" class="btn btn-primary mb-2">Filter</button>
             </form>
-            {{-- Form untuk mencetak PDF, mengirim data yang sama dengan filter --}}
             <form action="{{ route('admin.laporan.cetak_pdf') }}" method="POST" class="mt-2" target="_blank">
                 @csrf
                 <input type="hidden" name="start_date" value="{{ $startDate }}">
                 <input type="hidden" name="end_date" value="{{ $endDate }}">
-                <input type="hidden" name="sekolah_id" value="{{ $sekolahId }}"> {{-- Kirim juga filter sekolah --}}
+                <input type="hidden" name="sekolah_id" value="{{ $sekolahId }}">
                 <button type="submit" class="btn btn-success"><i class="fas fa-print"></i> Cetak ke PDF</button>
             </form>
         </div>
@@ -93,7 +91,28 @@
                             </td>
                             <td>{{ $presensi->jam_masuk ? \Carbon\Carbon::parse($presensi->jam_masuk)->format('H:i:s') : '-' }}</td>
                             <td>{{ $presensi->jam_pulang ? \Carbon\Carbon::parse($presensi->jam_pulang)->format('H:i:s') : '-' }}</td>
-                            <td>{{ $presensi->keterangan ?? '-' }}</td>
+                            <td>
+                                {{-- PERUBAHAN: Menambahkan logika perhitungan keterangan --}}
+                                @php
+                                    $keterangan = $presensi->keterangan ?? '';
+                                    if ($presensi->status == 'Hadir') {
+                                        $jamMasuk = \Carbon\Carbon::parse($presensi->jam_masuk);
+                                        $jamPulang = $presensi->jam_pulang ? \Carbon\Carbon::parse($presensi->jam_pulang) : null;
+                                        $batasMasuk = \Carbon\Carbon::createFromTimeString('09:00:59');
+                                        $batasPulang = \Carbon\Carbon::createFromTimeString('15:00:00');
+
+                                        $keterangan_list = [];
+                                        if ($jamMasuk->isAfter($batasMasuk)) {
+                                            $keterangan_list[] = 'Telat ' . $jamMasuk->diffInMinutes($batasMasuk) . ' menit';
+                                        }
+                                        if ($jamPulang && $jamPulang->isBefore($batasPulang)) {
+                                            $keterangan_list[] = 'Pulang cepat ' . $batasPulang->diffInMinutes($jamPulang) . ' menit';
+                                        }
+                                        $keterangan = implode(', ', $keterangan_list);
+                                    }
+                                @endphp
+                                {{ $keterangan ?: '-' }}
+                            </td>
                         </tr>
                     @empty
                         <tr>

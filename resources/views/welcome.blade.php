@@ -4,39 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Presensi PKL</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <!-- Ganti ke Bootstrap 5 untuk komponen yang lebih modern -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font dari Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Icon dari Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
     <style>
         body {
-            background-color: #f4f6f9;
+            font-family: 'Poppins', sans-serif;
+            /* Latar belakang gradien dengan pola SVG halus */
+            background-color: #f5f7fa;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23c3cfe2' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            overflow: hidden;
+        }
+        .container-fluid {
             display: flex;
+            height: 100vh;
+            padding: 2rem;
+            gap: 2rem;
+        }
+        .main-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            flex-direction: column;
-        }
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .main-card {
-            width: 500px;
-        }
-        .attendee-card {
-            width: 600px;
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 2rem;
         }
         .clock {
-            font-size: 3rem;
-            font-weight: bold;
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: #333;
+            letter-spacing: 2px;
+        }
+        .date {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #666;
         }
         .status-message {
-            min-height: 100px;
-            border-radius: 10px;
+            min-height: 120px;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-        #attendee-list-container {
-            max-height: 40vh;
-            overflow-y: auto;
+        .status-message i {
+            animation: popIn 0.5s ease;
         }
-        /* Style untuk Indikator Fokus */
+        .student-info {
+            min-height: 60px;
+        }
         .focus-indicator-box {
             padding: 10px;
             border-radius: 8px;
@@ -44,77 +78,120 @@
             font-weight: bold;
             transition: background-color 0.3s, color 0.3s;
             border: 2px solid transparent;
-            user-select: none; /* Mencegah teks terseleksi saat diklik */
+            user-select: none;
         }
         .not-focused {
-            background-color: #f8d7da; /* Merah */
+            background-color: #f8d7da;
             color: #721c24;
             border-color: #f5c6cb;
         }
         .is-focused {
-            background-color: #d4edda; /* Hijau */
+            background-color: #d4edda;
             color: #155724;
             border-color: #c3e6cb;
+        }
+        .attendee-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            overflow: hidden;
+        }
+        .attendee-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .attendee-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #eee;
+            animation: fadeIn 0.5s ease;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .attendee-list li:hover {
+            background-color: #f8f9fa;
+        }
+        .attendee-list li:last-child {
+            border-bottom: none;
+        }
+        .attendee-list .detail-text {
+            font-size: 0.8rem;
+            font-style: italic;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
 
-    <!-- KARTU PRESENSI UTAMA -->
-    <div class="card text-center main-card">
-        <div class="card-header">
-            <h3>Sistem Presensi PKL</h3>
-        </div>
-        <div class="card-body">
-            <h2 id="date"></h2>
-            <div class="clock" id="clock"></div>
-            <hr>
-            <form id="presensi-form">
-                <input type="text" id="id_kartu" class="form-control" style="opacity: 0; position: absolute;" autofocus>
-            </form>
-            <div id="status" class="alert status-message mt-3 d-flex justify-content-center align-items-center">
-                <h5>Silakan Tempelkan Kartu Anda</h5>
+    <div class="container-fluid">
+        <!-- Panel Kiri -->
+        <div class="main-panel">
+            <div class="card text-center main-card">
+                <h2 id="date" class="date"></h2>
+                <div class="clock" id="clock"></div>
+                <hr class="my-4">
+                <form id="presensi-form" autocomplete="off">
+                    <input type="text" id="id_kartu" class="form-control" style="opacity: 0; position: absolute;" autofocus autocomplete="new-password">
+                </form>
+                <div id="status" class="alert status-message mt-3">
+                    <i class="fa-solid fa-id-card fa-2x mb-2"></i>
+                    <h5>Silakan Tempelkan Kartu Anda</h5>
+                </div>
+                 <div id="student-info" class="student-info mt-2"></div>
+                 <div id="focus-indicator" class="focus-indicator-box mt-3">
+                    <span></span>
+                 </div>
             </div>
-             <div id="student-info" class="mt-2"></div>
-
-             <!-- INDIKATOR FOKUS BARU -->
-             <div id="focus-indicator" class="focus-indicator-box mt-3">
-                <span></span>
-             </div>
         </div>
-    </div>
 
-    <!-- KARTU DAFTAR HADIR DENGAN TABS -->
-    <div class="card mt-4 attendee-card">
-        <div class="card-header">
-            <ul class="nav nav-tabs card-header-tabs" id="schoolTabs" role="tablist">
-                <!-- Tab navigasi akan dibuat oleh JavaScript -->
-            </ul>
-        </div>
-        <div class="card-body p-0" id="attendee-list-container">
-            <div class="tab-content" id="schoolTabsContent">
-                <!-- Konten tab akan dibuat oleh JavaScript -->
+        <!-- Panel Kanan -->
+        <div class="attendee-panel card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="schoolTabs" role="tablist">
+                    <!-- Tab navigasi akan dibuat oleh JavaScript -->
+                </ul>
+            </div>
+            <div class="card-body p-0">
+                <div class="tab-content" id="schoolTabsContent">
+                    <!-- Konten tab akan dibuat oleh JavaScript -->
+                </div>
             </div>
         </div>
     </div>
 
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         // Fungsi untuk update jam dan tanggal secara real-time
         function updateTime() {
             const now = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID');
+            document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('date').textContent = now.toLocaleDateString('id-ID', options);
         }
         setInterval(updateTime, 1000);
         updateTime();
 
-        // Fungsi untuk membangun ulang seluruh UI tab
+        // Fungsi untuk membangun ulang daftar hadir
         function updateTabs(groupedAttendees, activeSchoolId = null) {
             const tabsContainer = $('#schoolTabs');
             const contentContainer = $('#schoolTabsContent');
@@ -131,27 +208,59 @@
 
             let firstSchoolId = activeSchoolId || schoolIds[0];
 
+            // --- FUNGSI UNTUK MENGHITUNG STATUS DETAIL ---
+            function getDetailedStatus(jamMasuk, jamPulang) {
+                const batasMasuk = new Date();
+                batasMasuk.setHours(9, 0, 0, 0);
+                const batasPulang = new Date();
+                batasPulang.setHours(15, 0, 0, 0);
+                let detailText = '';
+                let statusBadge = '';
+                if (jamPulang) {
+                    const waktuPulang = new Date();
+                    const [h, m, s] = jamPulang.split(':');
+                    waktuPulang.setHours(h, m, s, 0);
+                    if (waktuPulang < batasPulang) {
+                        const diff = Math.round((batasPulang - waktuPulang) / 60000);
+                        detailText = `Pulang ${diff} menit lebih awal`;
+                    } else {
+                        detailText = 'Pulang Tepat Waktu';
+                    }
+                    statusBadge = `<span class="badge bg-secondary text-white">Pulang ${jamPulang.substring(0, 5)}</span>`;
+                } else {
+                    const waktuMasuk = new Date();
+                    const [h, m, s] = jamMasuk.split(':');
+                    waktuMasuk.setHours(h, m, s, 0);
+                    if (waktuMasuk > batasMasuk) {
+                        const diff = Math.round((waktuMasuk - batasMasuk) / 60000);
+                        detailText = `Telat ${diff} menit`;
+                    } else {
+                        detailText = 'Tepat Waktu';
+                    }
+                    statusBadge = `<span class="badge bg-primary text-white">Hadir ${jamMasuk.substring(0, 5)}</span>`;
+                }
+                return { detailText, statusBadge };
+            }
+
             schoolIds.forEach(schoolId => {
                 const attendees = groupedAttendees[schoolId];
-                if (!attendees || attendees.length === 0 || !attendees[0].siswa || !attendees[0].siswa.sekolah) {
-                    return;
-                }
+                if (!attendees || attendees.length === 0 || !attendees[0].siswa || !attendees[0].siswa.sekolah) return;
+                
                 const schoolName = attendees[0].siswa.sekolah.nama_sekolah;
                 const isActive = schoolId == firstSchoolId;
 
-                const tabLink = `<li class="nav-item"><a class="nav-link ${isActive ? 'active' : ''}" id="tab-${schoolId}" data-toggle="tab" href="#pane-${schoolId}" role="tab">${schoolName}</a></li>`;
+                const tabLink = `<li class="nav-item"><a class="nav-link ${isActive ? 'active' : ''}" id="tab-${schoolId}" data-bs-toggle="tab" href="#pane-${schoolId}" role="tab">${schoolName}</a></li>`;
                 tabsContainer.append(tabLink);
 
                 let listItems = '';
                 attendees.forEach(function(presensi) {
-                    let jamPulang = presensi.jam_pulang ? presensi.jam_pulang.substring(0, 5) : null;
-                    let jamMasuk = presensi.jam_masuk.substring(0, 5);
-                    let statusBadge = jamPulang
-                        ? `<span class="badge badge-success badge-pill">Pulang ${jamPulang}</span>`
-                        : `<span class="badge badge-primary badge-pill">Hadir ${jamMasuk}</span>`;
+                    const { detailText, statusBadge } = getDetailedStatus(presensi.jam_masuk, presensi.jam_pulang);
                     listItems += `
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div><strong>${presensi.siswa.nama_siswa}</strong></div>
+                            <div>
+                                <strong>${presensi.siswa.nama_siswa}</strong><br>
+                                <small class="text-muted detail-text">${detailText}</small>
+                            </div>
                             ${statusBadge}
                         </li>`;
                 });
@@ -172,10 +281,10 @@
         function checkFocus() {
             if (inputField.is(':focus')) {
                 focusIndicator.removeClass('not-focused').addClass('is-focused');
-                focusIndicator.find('span').text('Scanner Ready');
+                focusIndicator.find('span').html('<i class="fa-solid fa-wifi"></i> Scanner Ready');
             } else {
                 focusIndicator.removeClass('is-focused').addClass('not-focused');
-                focusIndicator.find('span').text('KLIK UNTUK AKTIFKAN SCANNER');
+                focusIndicator.find('span').html('<i class="fa-solid fa-triangle-exclamation"></i> KLIK UNTUK AKTIFKAN SCANNER');
             }
         }
 
@@ -183,7 +292,6 @@
         inputField.on('blur', checkFocus);
         focusIndicator.on('click', setFocus);
 
-        // PERUBAHAN: Event listener untuk mengembalikan fokus setelah klik tab
         $('#schoolTabs').on('shown.bs.tab', 'a', function (e) {
             setFocus();
         });
@@ -194,7 +302,7 @@
         $(document).ready(function() {
             const initialData = {!! json_encode($presensiHariIni ?? []) !!};
             updateTabs(initialData);
-            checkFocus(); // Cek status fokus saat pertama kali dimuat
+            checkFocus();
         });
 
         // Logika utama untuk menangani submit form (saat RFID scan)
@@ -205,15 +313,19 @@
 
             const statusDiv = $('#status');
             const studentInfoDiv = $('#student-info');
-            statusDiv.removeClass('alert-success alert-danger alert-warning').addClass('alert-info').html('<h5>Memproses...</h5>');
+            statusDiv.removeClass().addClass('alert alert-info status-message').html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>');
             studentInfoDiv.html('');
 
             axios.post('{{ route("presensi.store") }}', { id_kartu: id_kartu, _token: '{{ csrf_token() }}' })
             .then(function(response) {
                 const res = response.data;
-                statusDiv.removeClass('alert-info').addClass('alert-' + res.status_class).html('<h5>' + res.message + '</h5>');
+                const statusClass = res.status_class === 'success' ? 'alert-success' : 'alert-warning';
+                const icon = res.status_class === 'success' ? '<i class="fa-solid fa-check-circle fa-2x mb-2"></i>' : '<i class="fa-solid fa-info-circle fa-2x mb-2"></i>';
+                
+                statusDiv.removeClass().addClass(`alert ${statusClass} status-message`).html(`${icon}<h5>${res.message}</h5>`);
+                
                 if(res.student) {
-                    studentInfoDiv.html('<strong>' + res.student.nama_siswa + '</strong><br><small>' + res.student.sekolah.nama_sekolah + '</small>');
+                    studentInfoDiv.html(`<strong>${res.student.nama_siswa}</strong><br><small>${res.student.sekolah.nama_sekolah}</small>`);
                 }
                 if (res.attendees) {
                     updateTabs(res.attendees, res.active_school_id);
@@ -221,11 +333,11 @@
             })
             .catch(function(error) {
                 const res = error.response.data;
-                statusDiv.removeClass('alert-info').addClass('alert-danger').html('<h5>' + (res.message || 'Terjadi kesalahan!') + '</h5>');
+                statusDiv.removeClass().addClass('alert alert-danger status-message').html(`<i class="fa-solid fa-times-circle fa-2x mb-2"></i><h5>${res.message || 'Terjadi kesalahan!'}</h5>`);
             });
 
             inputField.val('');
-            setFocus(); // Pastikan fokus kembali setelah submit
+            setFocus();
         });
 
         // Refresh daftar hadir setiap 5 detik
