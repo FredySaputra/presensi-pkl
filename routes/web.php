@@ -5,13 +5,18 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\SekolahController;
 use App\Http\Controllers\Admin\SiswaController;
 use App\Http\Controllers\PresensiController;
 
 Route::get('/', [PresensiController::class, 'index'])->name('presensi.index');
 Route::post('/presensi/store', [PresensiController::class, 'store'])->name('presensi.store');
+Route::get('/presensi/data', [PresensiController::class, 'getAttendanceData'])->name('presensi.data');
 
+Route::get('/dashboard', function () {
+    return redirect()->route('admin.dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
 
@@ -29,8 +34,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('sekolah', SekolahController::class);
 
         Route::resource('siswa', SiswaController::class);
-        Route::view('/laporan', 'admin.laporan-placeholder')->name('laporan.index');
-
+        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+        Route::post('/laporan/izin', [LaporanController::class, 'catatIzin'])->name('laporan.izin');
     });
 });
 
