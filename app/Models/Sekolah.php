@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Sekolah extends Model
 {
@@ -15,6 +16,11 @@ class Sekolah extends Model
         'nama_sekolah',
     ];
 
+     protected function setNamaSekolahAttribute($value)
+    {
+     
+        $this->attributes['nama_sekolah'] = Str::upper($value);
+    }
     
     public function siswas(): HasMany
     {

@@ -36,6 +36,26 @@
             max-height: 40vh;
             overflow-y: auto;
         }
+        /* Style untuk Indikator Fokus */
+        .focus-indicator-box {
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
+            border: 2px solid transparent;
+            user-select: none; /* Mencegah teks terseleksi saat diklik */
+        }
+        .not-focused {
+            background-color: #f8d7da; /* Merah */
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .is-focused {
+            background-color: #d4edda; /* Hijau */
+            color: #155724;
+            border-color: #c3e6cb;
+        }
     </style>
 </head>
 <body>
@@ -56,6 +76,11 @@
                 <h5>Silakan Tempelkan Kartu Anda</h5>
             </div>
              <div id="student-info" class="mt-2"></div>
+
+             <!-- INDIKATOR FOKUS BARU -->
+             <div id="focus-indicator" class="focus-indicator-box mt-3">
+                <span></span>
+             </div>
         </div>
     </div>
 
@@ -109,16 +134,14 @@
             schoolIds.forEach(schoolId => {
                 const attendees = groupedAttendees[schoolId];
                 if (!attendees || attendees.length === 0 || !attendees[0].siswa || !attendees[0].siswa.sekolah) {
-                    return; // Lewati jika data tidak lengkap
+                    return;
                 }
                 const schoolName = attendees[0].siswa.sekolah.nama_sekolah;
                 const isActive = schoolId == firstSchoolId;
 
-                // Buat Navigasi Tab
                 const tabLink = `<li class="nav-item"><a class="nav-link ${isActive ? 'active' : ''}" id="tab-${schoolId}" data-toggle="tab" href="#pane-${schoolId}" role="tab">${schoolName}</a></li>`;
                 tabsContainer.append(tabLink);
 
-                // Buat Konten Tab
                 let listItems = '';
                 attendees.forEach(function(presensi) {
                     let jamPulang = presensi.jam_pulang ? presensi.jam_pulang.substring(0, 5) : null;
@@ -138,16 +161,46 @@
             });
         }
 
-        // Inisialisasi daftar hadir saat halaman pertama kali dimuat
+        // --- LOGIKA INDIKATOR FOKUS ---
+        const inputField = $('#id_kartu');
+        const focusIndicator = $('#focus-indicator');
+
+        function setFocus() {
+            inputField.focus();
+        }
+
+        function checkFocus() {
+            if (inputField.is(':focus')) {
+                focusIndicator.removeClass('not-focused').addClass('is-focused');
+                focusIndicator.find('span').text('Scanner Ready');
+            } else {
+                focusIndicator.removeClass('is-focused').addClass('not-focused');
+                focusIndicator.find('span').text('KLIK UNTUK AKTIFKAN SCANNER');
+            }
+        }
+
+        inputField.on('focus', checkFocus);
+        inputField.on('blur', checkFocus);
+        focusIndicator.on('click', setFocus);
+
+        // PERUBAHAN: Event listener untuk mengembalikan fokus setelah klik tab
+        $('#schoolTabs').on('shown.bs.tab', 'a', function (e) {
+            setFocus();
+        });
+        // --- END LOGIKA INDIKATOR FOKUS ---
+
+
+        // Inisialisasi saat halaman dimuat
         $(document).ready(function() {
             const initialData = {!! json_encode($presensiHariIni ?? []) !!};
             updateTabs(initialData);
+            checkFocus(); // Cek status fokus saat pertama kali dimuat
         });
 
         // Logika utama untuk menangani submit form (saat RFID scan)
         $('#presensi-form').on('submit', function(e) {
             e.preventDefault();
-            let id_kartu = $('#id_kartu').val();
+            let id_kartu = inputField.val();
             if (id_kartu === '') return;
 
             const statusDiv = $('#status');
@@ -163,7 +216,6 @@
                     studentInfoDiv.html('<strong>' + res.student.nama_siswa + '</strong><br><small>' + res.student.sekolah.nama_sekolah + '</small>');
                 }
                 if (res.attendees) {
-                    // Update UI dan aktifkan tab yang sesuai
                     updateTabs(res.attendees, res.active_school_id);
                 }
             })
@@ -172,14 +224,14 @@
                 statusDiv.removeClass('alert-info').addClass('alert-danger').html('<h5>' + (res.message || 'Terjadi kesalahan!') + '</h5>');
             });
 
-            $('#id_kartu').val('').focus();
+            inputField.val('');
+            setFocus(); // Pastikan fokus kembali setelah submit
         });
 
         // Refresh daftar hadir setiap 5 detik
         setInterval(function() {
             axios.get('{{ route("presensi.data") }}')
                 .then(function(response) {
-                    // Cek tab mana yang sedang aktif sebelum update
                     const activeTabId = $('#schoolTabs .nav-link.active').attr('id');
                     let activeSchoolId = activeTabId ? activeTabId.replace('tab-', '') : null;
                     updateTabs(response.data, activeSchoolId);

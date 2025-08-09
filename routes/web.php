@@ -36,6 +36,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('siswa', SiswaController::class);
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::post('/laporan/izin', [LaporanController::class, 'catatIzin'])->name('laporan.izin');
+        Route::post('/laporan/pdf', [LaporanController::class, 'cetakPdf'])->name('laporan.cetak_pdf');
+
     });
 });
 
