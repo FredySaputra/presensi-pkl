@@ -92,7 +92,6 @@
                             <td>{{ $presensi->jam_masuk ? \Carbon\Carbon::parse($presensi->jam_masuk)->format('H:i:s') : '-' }}</td>
                             <td>{{ $presensi->jam_pulang ? \Carbon\Carbon::parse($presensi->jam_pulang)->format('H:i:s') : '-' }}</td>
                             <td>
-                                {{-- PERUBAHAN: Menambahkan logika perhitungan keterangan --}}
                                 @php
                                     $keterangan = $presensi->keterangan ?? '';
                                     if ($presensi->status == 'Hadir') {
@@ -102,11 +101,35 @@
                                         $batasPulang = \Carbon\Carbon::createFromTimeString('15:00:00');
 
                                         $keterangan_list = [];
+
                                         if ($jamMasuk->isAfter($batasMasuk)) {
-                                            $keterangan_list[] = 'Telat ' . $jamMasuk->diffInMinutes($batasMasuk) . ' menit';
+                                            $totalMenitTelat = $jamMasuk->diffInMinutes($batasMasuk);
+                                            $jamTelat = floor($totalMenitTelat / 60);
+                                            $menitSisa = $totalMenitTelat % 60;
+                                            
+                                            $keteranganTelat = 'Telat ';
+                                            if ($jamTelat > 0) {
+                                                $keteranganTelat .= $jamTelat . ' jam ';
+                                            }
+                                            if ($menitSisa > 0) {
+                                                $keteranganTelat .= $menitSisa . ' menit';
+                                            }
+                                            $keterangan_list[] = trim($keteranganTelat);
                                         }
+
                                         if ($jamPulang && $jamPulang->isBefore($batasPulang)) {
-                                            $keterangan_list[] = 'Pulang cepat ' . $batasPulang->diffInMinutes($jamPulang) . ' menit';
+                                            $totalMenitPulangCepat = $batasPulang->diffInMinutes($jamPulang);
+                                            $jamPulangCepat = floor($totalMenitPulangCepat / 60);
+                                            $menitSisaPulang = $totalMenitPulangCepat % 60;
+
+                                            $keteranganPulang = 'Pulang cepat ';
+                                            if ($jamPulangCepat > 0) {
+                                                $keteranganPulang .= $jamPulangCepat . ' jam ';
+                                            }
+                                            if ($menitSisaPulang > 0) {
+                                                $keteranganPulang .= $menitSisaPulang . ' menit';
+                                            }
+                                            $keterangan_list[] = trim($keteranganPulang);
                                         }
                                         $keterangan = implode(', ', $keterangan_list);
                                     }

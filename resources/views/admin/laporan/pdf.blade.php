@@ -5,84 +5,61 @@
     <style>
         body { font-family: sans-serif; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #dddddd; text-align: left; padding: 8px; font-size: 12px; }
+        th, td { border: 1px solid #000; text-align: center; padding: 4px; font-size: 10px; }
         th { background-color: #f2f2f2; }
-        h2 { text-align: center; }
+        h3, p { text-align: left; margin: 0; }
+        .header-table { width: 100%; border: none; margin-bottom: 15px; }
+        .header-table td { border: none; text-align: left; padding: 0; }
+        .no-wrap { white-space: nowrap; }
     </style>
 </head>
 <body>
-    <h2>Laporan Presensi Siswa PKL</h2>
-    <p>Periode: {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMMM Y') }}</p>
-    @if($sekolahTerpilih)
-        <p>Sekolah: {{ $sekolahTerpilih->nama_sekolah }}</p>
-    @endif
-    <hr>
+    <table class="header-table">
+        <tr>
+            <td>
+                <h3>LAPORAN PRESENSI</h3>
+                @if($sekolahTerpilih)
+                    <p><strong>Sekolah:</strong> {{ $sekolahTerpilih->nama_sekolah }}</p>
+                @endif
+                <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMMM Y') }} &ndash; {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMMM Y') }}</p>
+            </td>
+        </tr>
+    </table>
+
     <table>
         <thead>
             <tr>
-                <th>Tanggal</th>
-                <th>Nama Siswa</th>
-                <th>Sekolah</th>
-                <th>Status</th>
-                <th>Jam Masuk</th>
-                <th>Jam Pulang</th>
-                <th>Keterangan</th>
+                <th rowspan="2" style="vertical-align: middle;">Tanggal</th>
+                @foreach ($studentsChunk as $student)
+                    <th colspan="2">{{ $student->nama_siswa }}</th>
+                @endforeach
+            </tr>
+            <tr>
+                @foreach ($studentsChunk as $student)
+                    <th>Datang</th>
+                    <th>Pulang</th>
+                @endforeach
             </tr>
         </thead>
         <tbody>
-            @foreach ($presensis as $presensi)
+            @foreach ($dates as $date)
                 <tr>
-                    <td>{{ \Carbon\Carbon::parse($presensi->tanggal)->format('d-m-Y') }}</td>
-                    <td>{{ $presensi->siswa->nama_siswa ?? 'Siswa Dihapus' }}</td>
-                    <td>{{ $presensi->siswa->sekolah->nama_sekolah ?? 'Sekolah Dihapus' }}</td>
-                    <td>{{ $presensi->status }}</td>
-                    <td>{{ $presensi->jam_masuk ? \Carbon\Carbon::parse($presensi->jam_masuk)->format('H:i:s') : '-' }}</td>
-                    <td>{{ $presensi->jam_pulang ? \Carbon\Carbon::parse($presensi->jam_pulang)->format('H:i:s') : '-' }}</td>
-                    <td>
+                    <td class="no-wrap">{{ \Carbon\Carbon::parse($date)->format('d-m-Y') }}</td>
+                    @foreach ($studentsChunk as $student)
                         @php
-                            $keterangan = $presensi->keterangan ?? '';
-                            if ($presensi->status == 'Hadir') {
-                                $jamMasuk = \Carbon\Carbon::parse($presensi->jam_masuk);
-                                $jamPulang = $presensi->jam_pulang ? \Carbon\Carbon::parse($presensi->jam_pulang) : null;
-                                $batasMasuk = \Carbon\Carbon::createFromTimeString('09:00:59');
-                                $batasPulang = \Carbon\Carbon::createFromTimeString('15:00:00');
-
-                                $keterangan_list = [];
-
-                                if ($jamMasuk->isAfter($batasMasuk)) {
-                                    $totalMenitTelat = $jamMasuk->diffInMinutes($batasMasuk);
-                                    $jamTelat = floor($totalMenitTelat / 60);
-                                    $menitSisa = $totalMenitTelat % 60;
-                                    
-                                    $keteranganTelat = 'Telat ';
-                                    if ($jamTelat > 0) {
-                                        $keteranganTelat .= $jamTelat . ' jam ';
-                                    }
-                                    if ($menitSisa > 0) {
-                                        $keteranganTelat .= $menitSisa . ' menit';
-                                    }
-                                    $keterangan_list[] = trim($keteranganTelat);
-                                }
-
-                                if ($jamPulang && $jamPulang->isBefore($batasPulang)) {
-                                    $totalMenitPulangCepat = $batasPulang->diffInMinutes($jamPulang);
-                                    $jamPulangCepat = floor($totalMenitPulangCepat / 60);
-                                    $menitSisaPulang = $totalMenitPulangCepat % 60;
-
-                                    $keteranganPulang = 'Pulang cepat ';
-                                    if ($jamPulangCepat > 0) {
-                                        $keteranganPulang .= $jamPulangCepat . ' jam ';
-                                    }
-                                    if ($menitSisaPulang > 0) {
-                                        $keteranganPulang .= $menitSisaPulang . ' menit';
-                                    }
-                                    $keterangan_list[] = trim($keteranganPulang);
-                                }
-                                $keterangan = implode(', ', $keterangan_list);
-                            }
+                            $presensi = $reportData[$date][$student->id] ?? null;
                         @endphp
-                        {{ $keterangan ?: '-' }}
-                    </td>
+                        @if ($presensi)
+                            @if ($presensi['status'] == 'Hadir')
+                                <td>{{ \Carbon\Carbon::parse($presensi['jam_masuk'])->format('H:i') }}</td>
+                                <td>{{ $presensi['jam_pulang'] ? \Carbon\Carbon::parse($presensi['jam_pulang'])->format('H:i') : '-' }}</td>
+                            @else
+                                <td colspan="2">{{ $presensi['status'] }}</td>
+                            @endif
+                        @else
+                            <td colspan="2">Alpa</td>
+                        @endif
+                    @endforeach
                 </tr>
             @endforeach
         </tbody>
