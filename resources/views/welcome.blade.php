@@ -17,7 +17,7 @@
             font-family: 'Poppins', sans-serif;
             /* Latar belakang gradien dengan pola SVG halus */
             background-color: #f5f7fa;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23c3cfe2' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23c3cfe2' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             overflow: hidden;
         }
         .container-fluid {
@@ -209,35 +209,54 @@
             let firstSchoolId = activeSchoolId || schoolIds[0];
 
             // --- FUNGSI UNTUK MENGHITUNG STATUS DETAIL ---
-            function getDetailedStatus(jamMasuk, jamPulang) {
+            function getDetailedStatus(presensi) {
+                let detailText = '';
+                let statusBadge = '';
+
+                // PERBAIKAN: Handle kasus Izin/Alpa
+                if (presensi.status !== 'Hadir') {
+                    detailText = presensi.keterangan || presensi.status;
+                    const badgeClass = presensi.status === 'Izin' ? 'bg-info' : 'bg-secondary';
+                    statusBadge = `<span class="badge ${badgeClass} text-white">${presensi.status}</span>`;
+                    return { detailText, statusBadge };
+                }
+
+                const jamMasuk = presensi.jam_masuk;
+                const jamPulang = presensi.jam_pulang;
+
                 const batasMasuk = new Date();
                 batasMasuk.setHours(9, 0, 0, 0);
                 const batasPulang = new Date();
                 batasPulang.setHours(15, 0, 0, 0);
-                let detailText = '';
-                let statusBadge = '';
+
                 if (jamPulang) {
                     const waktuPulang = new Date();
-                    const [h, m, s] = jamPulang.split(':');
-                    waktuPulang.setHours(h, m, s, 0);
-                    if (waktuPulang < batasPulang) {
-                        const diff = Math.round((batasPulang - waktuPulang) / 60000);
-                        detailText = `Pulang ${diff} menit lebih awal`;
-                    } else {
-                        detailText = 'Pulang Tepat Waktu';
+                    // PERBAIKAN: Cek jika jamPulang tidak null sebelum split
+                    if(jamPulang) {
+                        const [h, m, s] = jamPulang.split(':');
+                        waktuPulang.setHours(h, m, s, 0);
+                        if (waktuPulang < batasPulang) {
+                            const diff = Math.round((batasPulang - waktuPulang) / 60000);
+                            detailText = `Pulang ${diff} menit lebih awal`;
+                        } else {
+                            detailText = 'Pulang Tepat Waktu';
+                        }
                     }
-                    statusBadge = `<span class="badge bg-secondary text-white">Pulang ${jamPulang.substring(0, 5)}</span>`;
+                    statusBadge = `<span class="badge bg-secondary text-white">Pulang ${jamPulang ? jamPulang.substring(0, 5) : ''}</span>`;
                 } else {
                     const waktuMasuk = new Date();
-                    const [h, m, s] = jamMasuk.split(':');
-                    waktuMasuk.setHours(h, m, s, 0);
-                    if (waktuMasuk > batasMasuk) {
-                        const diff = Math.round((waktuMasuk - batasMasuk) / 60000);
-                        detailText = `Telat ${diff} menit`;
-                    } else {
-                        detailText = 'Tepat Waktu';
+                    // PERBAIKAN: Cek jika jamMasuk tidak null sebelum split
+                    if(jamMasuk) {
+                        const [h, m, s] = jamMasuk.split(':');
+                        waktuMasuk.setHours(h, m, s, 0);
+                        if (waktuMasuk > batasMasuk) {
+                            const diff = Math.round((waktuMasuk - batasMasuk) / 60000);
+                            detailText = `Telat ${diff} menit`;
+                        } else {
+                            detailText = 'Tepat Waktu';
+                        }
                     }
-                    statusBadge = `<span class="badge bg-primary text-white">Hadir ${jamMasuk.substring(0, 5)}</span>`;
+                    statusBadge = `<span class="badge bg-primary text-white">Hadir ${jamMasuk ? jamMasuk.substring(0, 5) : ''}</span>`;
                 }
                 return { detailText, statusBadge };
             }
@@ -254,7 +273,7 @@
 
                 let listItems = '';
                 attendees.forEach(function(presensi) {
-                    const { detailText, statusBadge } = getDetailedStatus(presensi.jam_masuk, presensi.jam_pulang);
+                    const { detailText, statusBadge } = getDetailedStatus(presensi);
                     listItems += `
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
