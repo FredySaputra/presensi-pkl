@@ -24,6 +24,7 @@
     {{-- Form Filter dan Tombol Cetak --}}
     <div class="card">
         <div class="card-body">
+            {{-- ... (form filter tidak berubah) ... --}}
             <form action="{{ route('admin.laporan.index') }}" method="GET" class="form-inline">
                 <div class="form-group mb-2">
                     <label for="start_date" class="mr-2">Dari Tanggal:</label>
@@ -60,6 +61,11 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Data Presensi dari {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMM Y') }} sampai {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMM Y') }}</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#izinModal">
+                    <i class="fas fa-plus"></i> Catat Izin Hari Ini
+                </button>
+            </div>
         </div>
         <div class="card-body table-responsive">
             <table class="table table-bordered">
@@ -72,6 +78,7 @@
                         <th>Jam Masuk</th>
                         <th>Jam Pulang</th>
                         <th>Keterangan</th>
+                        <th>Aksi</th> {{-- KOLOM BARU --}}
                     </tr>
                 </thead>
                 <tbody>
@@ -99,14 +106,11 @@
                                         $jamPulang = $presensi->jam_pulang ? \Carbon\Carbon::parse($presensi->jam_pulang) : null;
                                         $batasMasuk = \Carbon\Carbon::createFromTimeString('09:00:59');
                                         $batasPulang = \Carbon\Carbon::createFromTimeString('15:00:00');
-
                                         $keterangan_list = [];
-
                                         if ($jamMasuk->isAfter($batasMasuk)) {
                                             $totalMenitTelat = $jamMasuk->diffInMinutes($batasMasuk);
                                             $jamTelat = floor($totalMenitTelat / 60);
                                             $menitSisa = $totalMenitTelat % 60;
-                                            
                                             $keteranganTelat = 'Telat ';
                                             if ($jamTelat > 0) {
                                                 $keteranganTelat .= $jamTelat . ' jam ';
@@ -116,12 +120,10 @@
                                             }
                                             $keterangan_list[] = trim($keteranganTelat);
                                         }
-
                                         if ($jamPulang && $jamPulang->isBefore($batasPulang)) {
                                             $totalMenitPulangCepat = $batasPulang->diffInMinutes($jamPulang);
                                             $jamPulangCepat = floor($totalMenitPulangCepat / 60);
                                             $menitSisaPulang = $totalMenitPulangCepat % 60;
-
                                             $keteranganPulang = 'Pulang cepat ';
                                             if ($jamPulangCepat > 0) {
                                                 $keteranganPulang .= $jamPulangCepat . ' jam ';
@@ -136,14 +138,56 @@
                                 @endphp
                                 {{ $keterangan ?: '-' }}
                             </td>
+                            {{-- TOMBOL EDIT BARU --}}
+                            <td>
+                                <a href="{{ route('admin.presensi.edit', $presensi->id) }}" class="btn btn-warning btn-xs">Edit</a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">Tidak ada data presensi pada rentang tanggal dan sekolah yang dipilih.</td>
+                            <td colspan="8" class="text-center">Tidak ada data presensi pada rentang tanggal dan sekolah yang dipilih.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Modal untuk Catat Izin -->
+    <div class="modal fade" id="izinModal" tabindex="-1" role="dialog" aria-labelledby="izinModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="izinModalLabel">Catat Izin Siswa (Hari Ini)</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ route('admin.laporan.izin') }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="siswa_id">Pilih Siswa</label>
+                            <select name="siswa_id" id="siswa_id" class="form-control" required>
+                                <option value="">-- Pilih Siswa yang Belum Hadir --</option>
+                                @forelse($siswaBelumHadir as $siswa)
+                                    <option value="{{ $siswa->id }}">{{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})</option>
+                                @empty
+                                    <option value="" disabled>Semua siswa sudah tercatat hadir/izin hari ini.</option>
+                                @endforelse
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="keterangan">Keterangan Izin</label>
+                            <input type="text" name="keterangan" class="form-control" placeholder="Contoh: Sakit, Acara Keluarga" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 @stop
