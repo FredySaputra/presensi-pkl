@@ -18,64 +18,76 @@ class LaporanController extends Controller
         $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
         $sekolahId = $request->input('sekolah_id');
         $sekolahs = Sekolah::orderBy('nama_sekolah')->get();
+
         $query = Presensi::with(['siswa.sekolah'])
                          ->whereBetween('tanggal', [$startDate, $endDate]);
+
         if ($sekolahId) {
             $query->whereHas('siswa', function ($q) use ($sekolahId) {
                 $q->where('sekolah_id', $sekolahId);
             });
         }
         $presensis = $query->orderBy('tanggal', 'desc')->get();
-        return view('admin.laporan.index', compact('presensis', 'startDate', 'endDate', 'sekolahs', 'sekolahId'));
+
+        // --- LOGIKA BARU UNTUK FITUR IZIN ---
+        // 1. Ambil ID semua siswa yang sudah punya catatan presensi hari ini (hadir atau izin)
+        $siswaHadirHariIniIds = Presensi::whereDate('tanggal', Carbon::today())->pluck('siswa_id');
+
+        // 2. Ambil semua siswa aktif yang ID-nya TIDAK ADA di daftar di atas
+        $siswaBelumHadir = Siswa::whereNotIn('id', $siswaHadirHariIniIds)
+                                ->orderBy('nama_siswa', 'asc')
+                                ->get();
+        // --- END LOGIKA BARU ---
+
+        return view('admin.laporan.index', compact('presensis', 'startDate', 'endDate', 'sekolahs', 'sekolahId', 'siswaBelumHadir'));
     }
 
     public function catatIzin(Request $request)
     {
-        // ... (kode tidak berubah)
         $request->validate([
             'siswa_id' => 'required|exists:siswas,id',
             'keterangan' => 'required|string|max:255',
         ]);
+
         $sudahAdaPresensi = Presensi::where('siswa_id', $request->siswa_id)
                                     ->whereDate('tanggal', Carbon::today())
                                     ->exists();
+
         if ($sudahAdaPresensi) {
             return redirect()->route('admin.laporan.index')->with('error', 'Siswa sudah memiliki data presensi hari ini.');
         }
+
         Presensi::create([
             'siswa_id' => $request->siswa_id,
             'tanggal' => Carbon::today()->toDateString(),
             'status' => 'Izin',
             'keterangan' => $request->keterangan,
         ]);
+
         return redirect()->route('admin.laporan.index')->with('success', 'Status izin berhasil dicatat.');
     }
 
     public function cetakPdf(Request $request)
     {
+        // ... (kode cetakPdf tidak berubah)
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'sekolah_id' => 'nullable|exists:sekolahs,id'
         ]);
-
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $sekolahId = $request->input('sekolah_id');
-
         $querySiswa = Siswa::query()->whereHas('presensis', function($q) use ($startDate, $endDate) {
             $q->whereBetween('tanggal', [$startDate, $endDate]);
         });
-
         if ($sekolahId) {
             $querySiswa->where('sekolah_id', $sekolahId);
         }
         $students = $querySiswa->orderBy('nama_siswa')->get();
-
         $presensis = Presensi::whereIn('siswa_id', $students->pluck('id'))
                              ->whereBetween('tanggal', [$startDate, $endDate])
                              ->get();
-
         $reportData = [];
         foreach ($presensis as $presensi) {
             $reportData[$presensi->tanggal][$presensi->siswa_id] = [
@@ -84,23 +96,16 @@ class LaporanController extends Controller
                 'status' => $presensi->status,
             ];
         }
-
         $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
         $dates = [];
         foreach ($period as $date) {
             $dates[] = $date->format('Y-m-d');
         }
-
-        // Kelompokkan siswa menjadi per 5 orang.
         $studentChunks = $students->chunk(5);
-
         if ($studentChunks->isEmpty()) {
             return back()->with('error', 'Tidak ada data presensi untuk dicetak pada periode ini.');
         }
-        
         $sekolahTerpilih = $sekolahId ? Sekolah::find($sekolahId) : null;
-
-        // PERUBAHAN: Kirim semua kelompok siswa ke view
         $data = [
             'studentChunks' => $studentChunks,
             'dates' => $dates,
@@ -109,7 +114,6 @@ class LaporanController extends Controller
             'endDate' => $endDate,
             'sekolahTerpilih' => $sekolahTerpilih,
         ];
-
         $pdf = Pdf::loadView('admin.laporan.pdf', $data)->setPaper('a4', 'landscape');
         return $pdf->stream('laporan-presensi.pdf');
     }
