@@ -314,7 +314,7 @@
         $('#schoolTabs').on('shown.bs.tab', 'a', function (e) {
             setFocus();
         });
-        // --- END LOGIKA INDIKATOR FOKUS ---
+     
 
 
         // Inisialisasi saat halaman dimuat
