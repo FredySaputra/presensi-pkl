@@ -6,16 +6,66 @@ use App\Http\Controllers\Controller;
 use App\Models\Sekolah;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
+use Carbon\Carbon; // Pastikan Carbon di-import
 
 class SiswaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $siswas = Siswa::with('sekolah')->orderBy('sekolah_id', 'asc')->get();
-        return view('admin.siswa.index', compact('siswas'));
+        // Ambil input filter dari request
+        $sekolahId = $request->input('sekolah_id');
+        $search = $request->input('search');
+
+        // Ambil data sekolah untuk dropdown
+        $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
+
+        // Bangun query siswa yang masih aktif
+        $query = Siswa::with('sekolah')->where('selesai_pkl', '>=', Carbon::today()->toDateString());
+
+        // Terapkan filter sekolah jika ada
+        if ($sekolahId) {
+            $query->where('sekolah_id', $sekolahId);
+        }
+
+        // Terapkan filter pencarian jika ada
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama_siswa', 'like', '%' . $search . '%')
+                  ->orWhere('id_kartu', 'like', '%' . $search . '%');
+            });
+        }
+
+        // PERUBAHAN: Gunakan paginate() untuk mengambil data per halaman (misal: 15 data per halaman)
+        $siswas = $query->orderBy('nama_siswa', 'asc')->paginate(15);
+
+        // Kirim semua data yang diperlukan ke view
+        return view('admin.siswa.index', compact('siswas', 'sekolahs', 'sekolahId', 'search'));
+    }
+
+    public function arsip(Request $request)
+    {
+        $sekolahId = $request->input('sekolah_id');
+        $search = $request->input('search');
+        $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
+
+        // Ambil siswa yang tanggal selesai PKL-nya sudah lewat dari hari ini
+        $query = Siswa::with('sekolah')->where('selesai_pkl', '<', Carbon::today()->toDateString());
+
+        if ($sekolahId) {
+            $query->where('sekolah_id', $sekolahId);
+        }
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama_siswa', 'like', '%' . $search . '%')
+                  ->orWhere('id_kartu', 'like', '%' . $search . '%');
+            });
+        }
+        $siswas = $query->orderBy('selesai_pkl', 'desc')->paginate(15);
+
+        return view('admin.siswa.arsip', compact('siswas', 'sekolahs', 'sekolahId', 'search'));
     }
 
     /**
@@ -39,19 +89,9 @@ class SiswaController extends Controller
             'mulai_pkl'   => 'required|date',
             'selesai_pkl' => 'required|date|after_or_equal:mulai_pkl',
         ]);
-
         Siswa::create($request->all());
-
         return redirect()->route('admin.siswa.index')
-            ->with('success', 'Data siswa berhasil ditambahkan.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
+                         ->with('success', 'Data siswa berhasil ditambahkan.');
     }
 
     /**
@@ -75,11 +115,9 @@ class SiswaController extends Controller
             'mulai_pkl'   => 'required|date',
             'selesai_pkl' => 'required|date|after_or_equal:mulai_pkl',
         ]);
-
         $siswa->update($request->all());
-
         return redirect()->route('admin.siswa.index')
-            ->with('success', 'Data siswa berhasil diperbarui.');
+                         ->with('success', 'Data siswa berhasil diperbarui.');
     }
 
     /**
@@ -89,6 +127,15 @@ class SiswaController extends Controller
     {
         $siswa->delete();
         return redirect()->route('admin.siswa.index')
-            ->with('success', 'Data siswa berhasil dihapus.');
+                         ->with('success', 'Data siswa berhasil dihapus.');
+    }
+
+    public function riwayat(Siswa $siswa)
+    {
+        // Muat semua data presensi milik siswa tersebut, diurutkan dari yang terbaru
+        $presensis = $siswa->presensis()->orderBy('tanggal', 'desc')->get();
+
+        // Kirim data siswa dan riwayat presensinya ke view baru
+        return view('admin.siswa.riwayat', compact('siswa', 'presensis'));
     }
 }
