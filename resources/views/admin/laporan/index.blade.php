@@ -54,6 +54,14 @@
                 <input type="hidden" name="sekolah_id" value="{{ $sekolahId }}">
                 <button type="submit" class="btn btn-success"><i class="fas fa-print"></i> Cetak ke PDF</button>
             </form>
+            <br>
+            <form action="{{ route('admin.laporan.cetak_excel') }}" method="POST" class="d-inline">
+                    @csrf
+                    <input type="hidden" name="start_date" value="{{ $startDate }}">
+                    <input type="hidden" name="end_date" value="{{ $endDate }}">
+                    <input type="hidden" name="sekolah_id" value="{{ $sekolahId }}">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-file-excel"></i> Ekspor ke Excel</button>
+                </form>
         </div>
     </div>
 

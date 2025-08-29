@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\LaporanPresensiExport;
 use App\Http\Controllers\Controller;
 use App\Models\Presensi;
 use App\Models\Sekolah;
@@ -9,6 +10,7 @@ use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
 {
@@ -87,6 +89,23 @@ class LaporanController extends Controller
         );
 
         return redirect()->route('admin.laporan.index')->with('success', 'Presensi manual berhasil disimpan.');
+    }
+
+    public function cetakExcel(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'sekolah_id' => 'nullable|exists:sekolahs,id'
+        ]);
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $sekolahId = $request->input('sekolah_id');
+        
+        $fileName = 'laporan-presensi-' . $startDate . '-sd-' . $endDate . '.xlsx';
+
+        return Excel::download(new LaporanPresensiExport($startDate, $endDate, $sekolahId), $fileName);
     }
 
     public function cetakPdf(Request $request)
