@@ -15,25 +15,15 @@ class SiswaController extends Controller
      */
     public function index(Request $request)
     {
-        // Ambil ID sekolah dari input filter
         $sekolahId = $request->input('sekolah_id');
-
-        // Ambil semua data sekolah untuk ditampilkan di dropdown
         $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
-
-        // Bangun query siswa secara dinamis
-        // PERUBAHAN: Tambahkan filter untuk hanya menampilkan siswa yang masa PKL-nya
-        // lebih dari atau sama dengan tanggal hari ini.
         $query = Siswa::with('sekolah')->where('selesai_pkl', '>=', Carbon::today()->toDateString());
 
-        // Jika ada sekolah yang dipilih, terapkan filter tambahan
         if ($sekolahId) {
             $query->where('sekolah_id', $sekolahId);
         }
 
         $siswas = $query->orderBy('nama_siswa', 'asc')->get();
-
-        // Kirim semua data yang diperlukan ke view
         return view('admin.siswa.index', compact('siswas', 'sekolahs', 'sekolahId'));
     }
 
@@ -97,5 +87,14 @@ class SiswaController extends Controller
         $siswa->delete();
         return redirect()->route('admin.siswa.index')
                          ->with('success', 'Data siswa berhasil dihapus.');
+    }
+
+    public function riwayat(Siswa $siswa)
+    {
+        // Muat semua data presensi milik siswa tersebut, diurutkan dari yang terbaru
+        $presensis = $siswa->presensis()->orderBy('tanggal', 'desc')->get();
+
+        // Kirim data siswa dan riwayat presensinya ke view baru
+        return view('admin.siswa.riwayat', compact('siswa', 'presensis'));
     }
 }

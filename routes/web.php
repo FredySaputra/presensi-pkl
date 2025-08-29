@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('sekolah', SekolahController::class);
 
         Route::resource('siswa', SiswaController::class);
+        Route::get('/siswa/{siswa}/riwayat', [SiswaController::class, 'riwayat'])->name('siswa.riwayat');
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::post('/laporan/izin', [LaporanController::class, 'catatIzin'])->name('laporan.izin');
         Route::post('/laporan/pdf', [LaporanController::class, 'cetakPdf'])->name('laporan.cetak_pdf');

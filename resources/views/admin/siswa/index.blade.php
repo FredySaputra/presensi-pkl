@@ -16,7 +16,7 @@
         </div>
     @endif
 
-    <!-- Form Filter Baru -->
+    <!-- Form Filter -->
     <div class="card">
         <div class="card-body">
             <form action="{{ route('admin.siswa.index') }}" method="GET" class="form-inline">
@@ -39,7 +39,7 @@
     <!-- Tabel Data Siswa -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Daftar Siswa PKL</h3>
+            <h3 class="card-title">Daftar Siswa PKL Aktif</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.siswa.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Tambah Siswa Baru
@@ -55,7 +55,7 @@
                         <th>Asal Sekolah</th>
                         <th>ID Kartu RFID</th>
                         <th>Masa PKL</th>
-                        <th style="width: 150px">Aksi</th>
+                        <th style="width: 200px">Aksi</th> {{-- Lebarkan kolom Aksi --}}
                     </tr>
                 </thead>
                 <tbody>
@@ -67,6 +67,8 @@
                             <td>{{ $siswa->id_kartu }}</td>
                             <td>{{ \Carbon\Carbon::parse($siswa->mulai_pkl)->format('d M Y') }} - {{ \Carbon\Carbon::parse($siswa->selesai_pkl)->format('d M Y') }}</td>
                             <td>
+                                {{-- TOMBOL BARU --}}
+                                <a href="{{ route('admin.siswa.riwayat', $siswa->id) }}" class="btn btn-info btn-xs">Riwayat</a>
                                 <a href="{{ route('admin.siswa.edit', $siswa->id) }}" class="btn btn-warning btn-xs">Edit</a>
                                 <form action="{{ route('admin.siswa.destroy', $siswa->id) }}" method="POST" class="d-inline">
                                     @csrf
