@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::post('/laporan/izin', [LaporanController::class, 'catatIzin'])->name('laporan.izin');
         Route::post('/laporan/pdf', [LaporanController::class, 'cetakPdf'])->name('laporan.cetak_pdf');
+        Route::post('/laporan/manual', [LaporanController::class, 'storeManualPresence'])->name('laporan.manual');
         Route::resource('presensi', AdminPresensiController::class)->only(['edit', 'update']);
 
     });

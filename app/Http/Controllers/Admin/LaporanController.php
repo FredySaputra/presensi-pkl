@@ -17,7 +17,8 @@ class LaporanController extends Controller
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
         $sekolahId = $request->input('sekolah_id');
-        $sekolahs = Sekolah::orderBy('nama_sekolah')->get();
+        
+        $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
 
         $query = Presensi::with(['siswa.sekolah'])
                          ->whereBetween('tanggal', [$startDate, $endDate]);
@@ -29,17 +30,17 @@ class LaporanController extends Controller
         }
         $presensis = $query->orderBy('tanggal', 'desc')->get();
 
-        // --- LOGIKA BARU UNTUK FITUR IZIN ---
-        // 1. Ambil ID semua siswa yang sudah punya catatan presensi hari ini (hadir atau izin)
         $siswaHadirHariIniIds = Presensi::whereDate('tanggal', Carbon::today())->pluck('siswa_id');
-
-        // 2. Ambil semua siswa aktif yang ID-nya TIDAK ADA di daftar di atas
-        $siswaBelumHadir = Siswa::whereNotIn('id', $siswaHadirHariIniIds)
+        
+        // PERBAIKAN: Tambahkan with('sekolah') untuk mengambil data sekolah
+        $siswaBelumHadir = Siswa::with('sekolah')->whereNotIn('id', $siswaHadirHariIniIds)
                                 ->orderBy('nama_siswa', 'asc')
                                 ->get();
-        // --- END LOGIKA BARU ---
+        
+        // PERBAIKAN: Tambahkan with('sekolah') untuk mengambil data sekolah
+        $allSiswa = Siswa::with('sekolah')->orderBy('nama_siswa', 'asc')->get();
 
-        return view('admin.laporan.index', compact('presensis', 'startDate', 'endDate', 'sekolahs', 'sekolahId', 'siswaBelumHadir'));
+        return view('admin.laporan.index', compact('presensis', 'startDate', 'endDate', 'sekolahs', 'sekolahId', 'siswaBelumHadir', 'allSiswa'));
     }
 
     public function catatIzin(Request $request)
@@ -48,28 +49,48 @@ class LaporanController extends Controller
             'siswa_id' => 'required|exists:siswas,id',
             'keterangan' => 'required|string|max:255',
         ]);
-
         $sudahAdaPresensi = Presensi::where('siswa_id', $request->siswa_id)
                                     ->whereDate('tanggal', Carbon::today())
                                     ->exists();
-
         if ($sudahAdaPresensi) {
             return redirect()->route('admin.laporan.index')->with('error', 'Siswa sudah memiliki data presensi hari ini.');
         }
-
         Presensi::create([
             'siswa_id' => $request->siswa_id,
             'tanggal' => Carbon::today()->toDateString(),
             'status' => 'Izin',
             'keterangan' => $request->keterangan,
         ]);
-
         return redirect()->route('admin.laporan.index')->with('success', 'Status izin berhasil dicatat.');
+    }
+
+    public function storeManualPresence(Request $request)
+    {
+        $request->validate([
+            'siswa_id' => 'required|exists:siswas,id',
+            'tanggal' => 'required|date',
+            'jam_masuk' => 'required|date_format:H:i',
+            'jam_pulang' => 'nullable|date_format:H:i|after_or_equal:jam_masuk',
+        ]);
+
+        Presensi::updateOrCreate(
+            [
+                'siswa_id' => $request->siswa_id,
+                'tanggal' => $request->tanggal,
+            ],
+            [
+                'jam_masuk' => $request->jam_masuk,
+                'jam_pulang' => $request->jam_pulang,
+                'status' => 'Hadir',
+                'keterangan' => 'Diinput manual oleh admin',
+            ]
+        );
+
+        return redirect()->route('admin.laporan.index')->with('success', 'Presensi manual berhasil disimpan.');
     }
 
     public function cetakPdf(Request $request)
     {
-        // ... (kode cetakPdf tidak berubah)
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',

@@ -6,16 +6,35 @@ use App\Http\Controllers\Controller;
 use App\Models\Sekolah;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
+use Carbon\Carbon; // Pastikan Carbon di-import
 
 class SiswaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $siswas = Siswa::with('sekolah')->orderBy('nama_siswa', 'asc')->get();
-        return view('admin.siswa.index', compact('siswas'));
+        // Ambil ID sekolah dari input filter
+        $sekolahId = $request->input('sekolah_id');
+
+        // Ambil semua data sekolah untuk ditampilkan di dropdown
+        $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
+
+        // Bangun query siswa secara dinamis
+        // PERUBAHAN: Tambahkan filter untuk hanya menampilkan siswa yang masa PKL-nya
+        // lebih dari atau sama dengan tanggal hari ini.
+        $query = Siswa::with('sekolah')->where('selesai_pkl', '>=', Carbon::today()->toDateString());
+
+        // Jika ada sekolah yang dipilih, terapkan filter tambahan
+        if ($sekolahId) {
+            $query->where('sekolah_id', $sekolahId);
+        }
+
+        $siswas = $query->orderBy('nama_siswa', 'asc')->get();
+
+        // Kirim semua data yang diperlukan ke view
+        return view('admin.siswa.index', compact('siswas', 'sekolahs', 'sekolahId'));
     }
 
     /**
@@ -39,19 +58,9 @@ class SiswaController extends Controller
             'mulai_pkl'   => 'required|date',
             'selesai_pkl' => 'required|date|after_or_equal:mulai_pkl',
         ]);
-
         Siswa::create($request->all());
-
         return redirect()->route('admin.siswa.index')
-            ->with('success', 'Data siswa berhasil ditambahkan.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
+                         ->with('success', 'Data siswa berhasil ditambahkan.');
     }
 
     /**
@@ -75,11 +84,9 @@ class SiswaController extends Controller
             'mulai_pkl'   => 'required|date',
             'selesai_pkl' => 'required|date|after_or_equal:mulai_pkl',
         ]);
-
         $siswa->update($request->all());
-
         return redirect()->route('admin.siswa.index')
-            ->with('success', 'Data siswa berhasil diperbarui.');
+                         ->with('success', 'Data siswa berhasil diperbarui.');
     }
 
     /**
@@ -89,6 +96,6 @@ class SiswaController extends Controller
     {
         $siswa->delete();
         return redirect()->route('admin.siswa.index')
-            ->with('success', 'Data siswa berhasil dihapus.');
+                         ->with('success', 'Data siswa berhasil dihapus.');
     }
 }

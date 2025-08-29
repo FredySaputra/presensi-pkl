@@ -62,12 +62,16 @@
         <div class="card-header">
             <h3 class="card-title">Data Presensi dari {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMM Y') }} sampai {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMM Y') }}</h3>
             <div class="card-tools">
+                <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#manualModal">
+                    <i class="fas fa-edit"></i> Presensi Manual
+                </button>
                 <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#izinModal">
                     <i class="fas fa-plus"></i> Catat Izin Hari Ini
                 </button>
             </div>
         </div>
         <div class="card-body table-responsive">
+            {{-- ... (tabel laporan tidak berubah) ... --}}
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -78,7 +82,7 @@
                         <th>Jam Masuk</th>
                         <th>Jam Pulang</th>
                         <th>Keterangan</th>
-                        <th>Aksi</th> {{-- KOLOM BARU --}}
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -138,7 +142,6 @@
                                 @endphp
                                 {{ $keterangan ?: '-' }}
                             </td>
-                            {{-- TOMBOL EDIT BARU --}}
                             <td>
                                 <a href="{{ route('admin.presensi.edit', $presensi->id) }}" class="btn btn-warning btn-xs">Edit</a>
                             </td>
@@ -171,6 +174,7 @@
                             <select name="siswa_id" id="siswa_id" class="form-control" required>
                                 <option value="">-- Pilih Siswa yang Belum Hadir --</option>
                                 @forelse($siswaBelumHadir as $siswa)
+                                    {{-- PERBAIKAN: Menampilkan nama sekolah --}}
                                     <option value="{{ $siswa->id }}">{{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})</option>
                                 @empty
                                     <option value="" disabled>Semua siswa sudah tercatat hadir/izin hari ini.</option>
@@ -180,6 +184,51 @@
                         <div class="form-group">
                             <label for="keterangan">Keterangan Izin</label>
                             <input type="text" name="keterangan" class="form-control" placeholder="Contoh: Sakit, Acara Keluarga" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BARU UNTUK PRESENSI MANUAL -->
+    <div class="modal fade" id="manualModal" tabindex="-1" role="dialog" aria-labelledby="manualModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="manualModalLabel">Input Presensi Manual</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ route('admin.laporan.manual') }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="siswa_id_manual">Pilih Siswa</label>
+                            <select name="siswa_id" id="siswa_id_manual" class="form-control" required>
+                                <option value="">-- Pilih Siswa --</option>
+                                @foreach($allSiswa as $siswa)
+                                    {{-- PERBAIKAN: Menampilkan nama sekolah --}}
+                                    <option value="{{ $siswa->id }}">{{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tanggal">Tanggal</label>
+                            <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="jam_masuk">Jam Masuk</label>
+                            <input type="time" name="jam_masuk" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="jam_pulang">Jam Pulang (Opsional)</label>
+                            <input type="time" name="jam_pulang" class="form-control">
                         </div>
                     </div>
                     <div class="modal-footer">

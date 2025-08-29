@@ -7,8 +7,7 @@
 @stop
 
 @section('content')
-
- @if(session('success'))
+    @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -16,7 +15,28 @@
             </button>
         </div>
     @endif
-    
+
+    <!-- Form Filter Baru -->
+    <div class="card">
+        <div class="card-body">
+            <form action="{{ route('admin.siswa.index') }}" method="GET" class="form-inline">
+                <div class="form-group mb-2">
+                    <label for="sekolah_id" class="mr-2">Filter Sekolah:</label>
+                    <select name="sekolah_id" class="form-control">
+                        <option value="">Semua Sekolah</option>
+                        @foreach($sekolahs as $sekolah)
+                            <option value="{{ $sekolah->id }}" {{ ($sekolahId ?? '') == $sekolah->id ? 'selected' : '' }}>
+                                {{ $sekolah->nama_sekolah }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2 ml-2">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabel Data Siswa -->
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Daftar Siswa PKL</h3>
@@ -58,7 +78,7 @@
                     @empty
                         <tr>
                             <td colspan="6" class="text-center">
-                                Belum ada data siswa.
+                                Tidak ada data siswa yang cocok dengan filter.
                             </td>
                         </tr>
                     @endforelse
