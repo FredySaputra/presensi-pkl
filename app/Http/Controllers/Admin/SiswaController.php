@@ -15,16 +15,34 @@ class SiswaController extends Controller
      */
     public function index(Request $request)
     {
+        // Ambil input filter dari request
         $sekolahId = $request->input('sekolah_id');
+        $search = $request->input('search');
+
+        // Ambil data sekolah untuk dropdown
         $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
+
+        // Bangun query siswa yang masih aktif
         $query = Siswa::with('sekolah')->where('selesai_pkl', '>=', Carbon::today()->toDateString());
 
+        // Terapkan filter sekolah jika ada
         if ($sekolahId) {
             $query->where('sekolah_id', $sekolahId);
         }
 
-        $siswas = $query->orderBy('nama_siswa', 'asc')->get();
-        return view('admin.siswa.index', compact('siswas', 'sekolahs', 'sekolahId'));
+        // Terapkan filter pencarian jika ada
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama_siswa', 'like', '%' . $search . '%')
+                  ->orWhere('id_kartu', 'like', '%' . $search . '%');
+            });
+        }
+
+        // PERUBAHAN: Gunakan paginate() untuk mengambil data per halaman (misal: 15 data per halaman)
+        $siswas = $query->orderBy('nama_siswa', 'asc')->paginate(15);
+
+        // Kirim semua data yang diperlukan ke view
+        return view('admin.siswa.index', compact('siswas', 'sekolahs', 'sekolahId', 'search'));
     }
 
     /**
