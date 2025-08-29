@@ -1,25 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', 'Manajemen Siswa PKL')
+@section('title', 'Arsip Siswa PKL')
 
 @section('content_header')
-    <h1>Manajemen Data Siswa PKL</h1>
+    <h1>Arsip Siswa PKL</h1>
 @stop
 
 @section('content')
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    @endif
-
     <!-- Form Filter -->
     <div class="card">
         <div class="card-body">
-            <form action="{{ route('admin.siswa.index') }}" method="GET" class="form-inline">
+            <form action="{{ route('admin.siswa.arsip') }}" method="GET" class="form-inline">
                 <div class="form-group mb-2">
                     <label for="sekolah_id" class="mr-2">Sekolah:</label>
                     <select name="sekolah_id" class="form-control">
@@ -40,17 +31,13 @@
         </div>
     </div>
 
-    <!-- Tabel Data Siswa -->
+    <!-- Tabel Data Arsip Siswa -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Daftar Siswa PKL Aktif</h3>
+            <h3 class="card-title">Daftar Siswa PKL Non-Aktif</h3>
             <div class="card-tools">
-                {{-- TOMBOL BARU UNTUK KE HALAMAN ARSIP --}}
-                <a href="{{ route('admin.siswa.arsip') }}" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-archive"></i> Lihat Arsip Siswa
-                </a>
-                <a href="{{ route('admin.siswa.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus"></i> Tambah Siswa Baru
+                <a href="{{ route('admin.siswa.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Kembali ke Siswa Aktif
                 </a>
             </div>
         </div>
@@ -58,12 +45,11 @@
             <table class="table table-bordered table-striped">
                 <thead>
                     <tr>
-                        <th style="width: 10px">#</th>
+                        <th>#</th>
                         <th>Nama Siswa</th>
                         <th>Asal Sekolah</th>
-                        <th>ID Kartu RFID</th>
-                        <th>Masa PKL</th>
-                        <th style="width: 200px">Aksi</th>
+                        <th>Tanggal Selesai PKL</th>
+                        <th style="width: 150px">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -72,22 +58,15 @@
                             <td>{{ ($siswas->currentPage() - 1) * $siswas->perPage() + $loop->iteration }}</td>
                             <td>{{ $siswa->nama_siswa }}</td>
                             <td>{{ $siswa->sekolah->nama_sekolah ?? 'Sekolah Dihapus' }}</td>
-                            <td>{{ $siswa->id_kartu }}</td>
-                            <td>{{ \Carbon\Carbon::parse($siswa->mulai_pkl)->format('d M Y') }} - {{ \Carbon\Carbon::parse($siswa->selesai_pkl)->format('d M Y') }}</td>
+                            <td>{{ \Carbon\Carbon::parse($siswa->selesai_pkl)->isoFormat('D MMMM Y') }}</td>
                             <td>
                                 <a href="{{ route('admin.siswa.riwayat', $siswa->id) }}" class="btn btn-info btn-xs">Riwayat</a>
-                                <a href="{{ route('admin.siswa.edit', $siswa->id) }}" class="btn btn-warning btn-xs">Edit</a>
-                                <form action="{{ route('admin.siswa.destroy', $siswa->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-xs delete-button">Hapus</button>
-                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center">
-                                Tidak ada data siswa yang cocok dengan filter.
+                            <td colspan="5" class="text-center">
+                                Tidak ada data siswa di arsip.
                             </td>
                         </tr>
                     @endforelse
@@ -98,7 +77,4 @@
             {{ $siswas->appends(request()->query())->links() }}
         </div>
     </div>
-@stop
-
-@section('js')
 @stop

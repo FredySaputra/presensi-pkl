@@ -16,33 +16,43 @@ class LaporanController extends Controller
 {
     public function index(Request $request)
     {
+        // Ambil semua input filter
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
         $sekolahId = $request->input('sekolah_id');
-        
-        $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
+        $search = $request->input('search'); // Input pencarian baru
 
+        $sekolahs = Sekolah::orderBy('nama_sekolah')->get();
+
+        // Bangun query presensi
         $query = Presensi::with(['siswa.sekolah'])
                          ->whereBetween('tanggal', [$startDate, $endDate]);
 
+        // Terapkan filter sekolah
         if ($sekolahId) {
             $query->whereHas('siswa', function ($q) use ($sekolahId) {
                 $q->where('sekolah_id', $sekolahId);
             });
         }
-        $presensis = $query->orderBy('tanggal', 'desc')->get();
 
+        // Terapkan filter pencarian berdasarkan nama siswa
+        if ($search) {
+            $query->whereHas('siswa', function ($q) use ($search) {
+                $q->where('nama_siswa', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Gunakan paginasi
+        $presensis = $query->orderBy('tanggal', 'desc')->paginate(15);
+
+        // Ambil data untuk modal izin
         $siswaHadirHariIniIds = Presensi::whereDate('tanggal', Carbon::today())->pluck('siswa_id');
-        
-        // PERBAIKAN: Tambahkan with('sekolah') untuk mengambil data sekolah
         $siswaBelumHadir = Siswa::with('sekolah')->whereNotIn('id', $siswaHadirHariIniIds)
                                 ->orderBy('nama_siswa', 'asc')
                                 ->get();
-        
-        // PERBAIKAN: Tambahkan with('sekolah') untuk mengambil data sekolah
         $allSiswa = Siswa::with('sekolah')->orderBy('nama_siswa', 'asc')->get();
 
-        return view('admin.laporan.index', compact('presensis', 'startDate', 'endDate', 'sekolahs', 'sekolahId', 'siswaBelumHadir', 'allSiswa'));
+        return view('admin.laporan.index', compact('presensis', 'startDate', 'endDate', 'sekolahs', 'sekolahId', 'siswaBelumHadir', 'allSiswa', 'search'));
     }
 
     public function catatIzin(Request $request)

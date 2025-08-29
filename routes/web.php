@@ -21,29 +21,29 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
 
-   
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    
-    Route::prefix('admin')->name('admin.')->group(function() {
+
+    Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        
+
         Route::resource('sekolah', SekolahController::class);
 
         Route::resource('siswa', SiswaController::class);
         Route::get('/siswa/{siswa}/riwayat', [SiswaController::class, 'riwayat'])->name('siswa.riwayat');
+        Route::get('/siswa-arsip', [SiswaController::class, 'arsip'])->name('siswa.arsip');
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::post('/laporan/izin', [LaporanController::class, 'catatIzin'])->name('laporan.izin');
         Route::post('/laporan/pdf', [LaporanController::class, 'cetakPdf'])->name('laporan.cetak_pdf');
         Route::post('/laporan/manual', [LaporanController::class, 'storeManualPresence'])->name('laporan.manual');
         Route::post('/laporan/excel', [LaporanController::class, 'cetakExcel'])->name('laporan.cetak_excel');
         Route::resource('presensi', AdminPresensiController::class)->only(['edit', 'update']);
-
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -21,17 +21,15 @@
         </div>
     @endif
 
-    {{-- Form Filter dan Tombol Cetak --}}
     <div class="card">
         <div class="card-body">
-            {{-- ... (form filter tidak berubah) ... --}}
             <form action="{{ route('admin.laporan.index') }}" method="GET" class="form-inline">
                 <div class="form-group mb-2">
-                    <label for="start_date" class="mr-2">Dari Tanggal:</label>
+                    <label for="start_date" class="mr-2">Dari:</label>
                     <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
                 </div>
                 <div class="form-group mx-sm-3 mb-2">
-                    <label for="end_date" class="mr-2">Sampai Tanggal:</label>
+                    <label for="end_date" class="mr-2">Sampai:</label>
                     <input type="date" name="end_date" class="form-control" value="{{ $endDate }}">
                 </div>
                 <div class="form-group mx-sm-3 mb-2">
@@ -45,30 +43,38 @@
                         @endforeach
                     </select>
                 </div>
+                {{-- Input Pencarian --}}
+                <div class="form-group mx-sm-3 mb-2">
+                    <label for="search" class="mr-2">Cari Siswa:</label>
+                    <input type="text" name="search" class="form-control" placeholder="Nama Siswa" value="{{ $search ?? '' }}">
+                </div>
                 <button type="submit" class="btn btn-primary mb-2">Filter</button>
             </form>
-            <form action="{{ route('admin.laporan.cetak_pdf') }}" method="POST" class="mt-2" target="_blank">
-                @csrf
-                <input type="hidden" name="start_date" value="{{ $startDate }}">
-                <input type="hidden" name="end_date" value="{{ $endDate }}">
-                <input type="hidden" name="sekolah_id" value="{{ $sekolahId }}">
-                <button type="submit" class="btn btn-success"><i class="fas fa-print"></i> Cetak ke PDF</button>
-            </form>
-            <br>
-            <form action="{{ route('admin.laporan.cetak_excel') }}" method="POST" class="d-inline">
+
+            <div class="mt-2">
+                <form action="{{ route('admin.laporan.cetak_pdf') }}" method="POST" class="d-inline" target="_blank">
                     @csrf
                     <input type="hidden" name="start_date" value="{{ $startDate }}">
                     <input type="hidden" name="end_date" value="{{ $endDate }}">
                     <input type="hidden" name="sekolah_id" value="{{ $sekolahId }}">
+                    <input type="hidden" name="search" value="{{ $search ?? '' }}">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-print"></i> Cetak ke PDF</button>
+                </form>
+                <form action="{{ route('admin.laporan.cetak_excel') }}" method="POST" class="d-inline">
+                    @csrf
+                    <input type="hidden" name="start_date" value="{{ $startDate }}">
+                    <input type="hidden" name="end_date" value="{{ $endDate }}">
+                    <input type="hidden" name="sekolah_id" value="{{ $sekolahId }}">
+                    <input type="hidden" name="search" value="{{ $search ?? '' }}">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-file-excel"></i> Ekspor ke Excel</button>
                 </form>
+            </div>
         </div>
     </div>
 
-    {{-- Tabel Laporan --}}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Data Presensi dari {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMM Y') }} sampai {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMM Y') }}</h3>
+            <h3 class="card-title">Data Presensi</h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#manualModal">
                     <i class="fas fa-edit"></i> Presensi Manual
@@ -79,7 +85,6 @@
             </div>
         </div>
         <div class="card-body table-responsive">
-            {{-- ... (tabel laporan tidak berubah) ... --}}
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -156,15 +161,18 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center">Tidak ada data presensi pada rentang tanggal dan sekolah yang dipilih.</td>
+                            <td colspan="8" class="text-center">Tidak ada data presensi yang cocok dengan filter.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+        <div class="card-footer clearfix">
+            {{ $presensis->appends(request()->query())->links() }}
+        </div>
     </div>
 
-    <!-- Modal untuk Catat Izin -->
+    {{-- Modal Izin --}}
     <div class="modal fade" id="izinModal" tabindex="-1" role="dialog" aria-labelledby="izinModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -182,7 +190,6 @@
                             <select name="siswa_id" id="siswa_id" class="form-control" required>
                                 <option value="">-- Pilih Siswa yang Belum Hadir --</option>
                                 @forelse($siswaBelumHadir as $siswa)
-                                    {{-- PERBAIKAN: Menampilkan nama sekolah --}}
                                     <option value="{{ $siswa->id }}">{{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})</option>
                                 @empty
                                     <option value="" disabled>Semua siswa sudah tercatat hadir/izin hari ini.</option>
@@ -203,7 +210,7 @@
         </div>
     </div>
 
-    <!-- MODAL BARU UNTUK PRESENSI MANUAL -->
+    {{-- Modal Presensi Manual --}}
     <div class="modal fade" id="manualModal" tabindex="-1" role="dialog" aria-labelledby="manualModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -221,7 +228,6 @@
                             <select name="siswa_id" id="siswa_id_manual" class="form-control" required>
                                 <option value="">-- Pilih Siswa --</option>
                                 @foreach($allSiswa as $siswa)
-                                    {{-- PERBAIKAN: Menampilkan nama sekolah --}}
                                     <option value="{{ $siswa->id }}">{{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})</option>
                                 @endforeach
                             </select>

@@ -45,6 +45,29 @@ class SiswaController extends Controller
         return view('admin.siswa.index', compact('siswas', 'sekolahs', 'sekolahId', 'search'));
     }
 
+    public function arsip(Request $request)
+    {
+        $sekolahId = $request->input('sekolah_id');
+        $search = $request->input('search');
+        $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
+
+        // Ambil siswa yang tanggal selesai PKL-nya sudah lewat dari hari ini
+        $query = Siswa::with('sekolah')->where('selesai_pkl', '<', Carbon::today()->toDateString());
+
+        if ($sekolahId) {
+            $query->where('sekolah_id', $sekolahId);
+        }
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama_siswa', 'like', '%' . $search . '%')
+                  ->orWhere('id_kartu', 'like', '%' . $search . '%');
+            });
+        }
+        $siswas = $query->orderBy('selesai_pkl', 'desc')->paginate(15);
+
+        return view('admin.siswa.arsip', compact('siswas', 'sekolahs', 'sekolahId', 'search'));
+    }
+
     /**
      * Show the form for creating a new resource.
      */
