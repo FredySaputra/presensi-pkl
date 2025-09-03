@@ -1,78 +1,63 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Laporan Presensi</title>
-    <style>
-        body { font-family: sans-serif; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #000; text-align: center; padding: 4px; font-size: 10px; }
-        th { background-color: #f2f2f2; }
-        h3, p { text-align: left; margin: 0; }
-        .header-table { width: 100%; border: none; margin-bottom: 15px; }
-        .header-table td { border: none; text-align: left; padding: 0; }
-        .no-wrap { white-space: nowrap; }
-        /* Class untuk memberikan page break */
-        .page-break {
-            page-break-after: always;
-        }
-    </style>
-</head>
-<body>
-    {{-- Loop untuk setiap kelompok (chunk) siswa --}}
-    @foreach ($studentChunks as $studentsChunk)
-        {{-- Tambahkan class page-break jika ini bukan halaman terakhir --}}
-        <div class="{{ !$loop->last ? 'page-break' : '' }}">
-            <table class="header-table">
-                <tr>
-                    <td>
-                        <h3>LAPORAN PRESENSI</h3>
-                        @if($sekolahTerpilih)
-                            <p><strong>Sekolah:</strong> {{ $sekolahTerpilih->nama_sekolah }}</p>
-                        @endif
-                        <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMMM Y') }} &ndash; {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMMM Y') }}</p>
-                    </td>
-                </tr>
-            </table>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Laporan Presensi</title>
+        <style>
+            body { font-family: sans-serif; font-size: 10px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid black; padding: 5px; text-align: center; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .header h2, .header h4 { margin: 0; }
+            .page-break { page-break-after: always; }
+            .holiday { background-color: #ffcccc; } /* <-- STYLE BARU */
+        </style>
+    </head>
+    <body>
+        @foreach ($siswaChunks as $chunkIndex => $siswaChunk)
+            <div class="header">
+                <h2>LAPORAN PRESENSI</h2>
+                @if ($sekolah)
+                    <h4>{{ $sekolah->nama_sekolah }}</h4>
+                @endif
+                <h4>Tanggal: {{ \Carbon\Carbon::parse($tanggalMulai)->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse($tanggalSelesai)->isoFormat('D MMMM Y') }}</h4>
+            </div>
 
             <table>
                 <thead>
                     <tr>
-                        <th rowspan="2" style="vertical-align: middle;">Tanggal</th>
-                        @foreach ($studentsChunk as $student)
-                            <th colspan="2">{{ $student->nama_siswa }}</th>
+                        <th rowspan="2">Tanggal</th>
+                        @foreach ($siswaChunk as $siswa)
+                            <th colspan="2">{{ $siswa->nama_siswa }}</th>
                         @endforeach
                     </tr>
                     <tr>
-                        @foreach ($studentsChunk as $student)
+                        @foreach ($siswaChunk as $siswa)
                             <th>Datang</th>
                             <th>Pulang</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($dates as $date)
+                    @foreach ($dates as $tanggal)
                         <tr>
-                            <td class="no-wrap">{{ \Carbon\Carbon::parse($date)->format('d-m-Y') }}</td>
-                            @foreach ($studentsChunk as $student)
+                            <td>{{ \Carbon\Carbon::parse($tanggal)->isoFormat('DD-MM-YYYY') }}</td>
+                            @foreach ($siswaChunk as $siswa)
                                 @php
-                                    $presensi = $reportData[$date][$student->id] ?? null;
+                                    $data = $pivotData[$tanggal][$siswa->id];
+                                    $isHoliday = $data['masuk'] === 'LIBUR'; // <-- CEK LIBUR
                                 @endphp
-                                @if ($presensi)
-                                    @if ($presensi['status'] == 'Hadir')
-                                        <td>{{ \Carbon\Carbon::parse($presensi['jam_masuk'])->format('H:i') }}</td>
-                                        <td>{{ $presensi['jam_pulang'] ? \Carbon\Carbon::parse($presensi['jam_pulang'])->format('H:i') : '-' }}</td>
-                                    @else
-                                        <td colspan="2">{{ $presensi['status'] }}</td>
-                                    @endif
-                                @else
-                                    <td colspan="2">Alpa</td>
-                                @endif
+                                <td class="{{ $isHoliday ? 'holiday' : '' }}">{{ $data['masuk'] }}</td>
+                                <td class="{{ $isHoliday ? 'holiday' : '' }}">{{ $data['pulang'] }}</td>
                             @endforeach
                         </tr>
                     @endforeach
                 </tbody>
             </table>
-        </div>
-    @endforeach
-</body>
-</html>
+            
+            @if (!$loop->last)
+                <div class="page-break"></div>
+            @endif
+        @endforeach
+    </body>
+    </html>
+    

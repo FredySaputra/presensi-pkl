@@ -14,6 +14,7 @@ class Sekolah extends Model
 
     protected $fillable = [
         'nama_sekolah',
+        'hari_libur',
     ];
 
      protected function setNamaSekolahAttribute($value)
