@@ -42,6 +42,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/laporan/pdf', [LaporanController::class, 'cetakPdf'])->name('laporan.cetak_pdf');
         Route::post('/laporan/manual', [LaporanController::class, 'storeManualPresence'])->name('laporan.manual');
         Route::post('/laporan/excel', [LaporanController::class, 'cetakExcel'])->name('laporan.cetak_excel');
+        Route::get('/laporan/get-siswa-tanpa-presensi', [LaporanController::class, 'getSiswaTanpaPresensi'])->name('laporan.getSiswa');
+        Route::resource('presensi', AdminPresensiController::class)->only(['edit', 'update']);
         Route::resource('presensi', AdminPresensiController::class)->only(['edit', 'update']);
     });
 });
