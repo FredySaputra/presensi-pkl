@@ -314,7 +314,6 @@
         $('#schoolTabs').on('shown.bs.tab', 'a', function (e) {
             setFocus();
         });
-     
 
 
         // Inisialisasi saat halaman dimuat
