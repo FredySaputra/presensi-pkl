@@ -117,6 +117,8 @@
                                     <span class="badge badge-success">Hadir</span>
                                 @elseif($presensi->status == 'Izin')
                                     <span class="badge badge-info">Izin</span>
+                                @elseif($presensi->status == 'Kurang')
+                                    <span class="badge badge-warning">Kurang</span>
                                 @else
                                     <span class="badge badge-secondary">{{ $presensi->status }}</span>
                                 @endif
@@ -126,20 +128,22 @@
                             <td>
                                 @php
                                     $keterangan = $presensi->keterangan;
-                                    if ($presensi->status == 'Hadir') {
-                                        $jamMasuk = \Carbon\Carbon::parse($presensi->jam_masuk);
-                                        $batasMasuk = \Carbon\Carbon::parse($presensi->tanggal . ' 09:00:00');
-                                        if ($jamMasuk->gt($batasMasuk)) {
-                                            $keterangan = 'Telat ' . $jamMasuk->diffForHumans($batasMasuk, true);
-                                        } else {
-                                            $keterangan = 'Tepat Waktu';
+                                    if ($presensi->status == 'Hadir' || $presensi->status == 'Kurang') {
+                                        if ($presensi->jam_masuk) {
+                                            $jamMasuk = \Carbon\Carbon::parse($presensi->jam_masuk);
+                                            $batasMasuk = \Carbon\Carbon::parse($presensi->tanggal . ' 09:00:00');
+                                            if ($jamMasuk->gt($batasMasuk)) {
+                                                $keterangan = 'Telat ' . $jamMasuk->diffForHumans($batasMasuk, ['parts' => 2, 'short' => true]);
+                                            } else {
+                                                $keterangan = 'Tepat Waktu';
+                                            }
                                         }
 
                                         if ($presensi->jam_pulang) {
                                             $jamPulang = \Carbon\Carbon::parse($presensi->jam_pulang);
                                             $batasPulang = \Carbon\Carbon::parse($presensi->tanggal . ' 15:00:00');
                                             if ($jamPulang->lt($batasPulang)) {
-                                                $keterangan .= ' | Pulang Awal ' . $jamPulang->diffForHumans($batasPulang, true);
+                                                $keterangan .= ' | Pulang Awal ' . $jamPulang->diffForHumans($batasPulang, ['parts' => 2, 'short' => true]);
                                             }
                                         }
                                     }
@@ -230,7 +234,6 @@
                             <label for="siswa_id_manual">Pilih Siswa</label>
                             <select name="siswa_id" id="siswa_id_manual" class="form-control" required>
                                 <option value="">-- Pilih Siswa --</option>
-                                {{-- PERBAIKAN: Menggunakan variabel $semuaSiswa --}}
                                 @foreach($semuaSiswa as $siswa)
                                     <option value="{{ $siswa->id }}">{{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})</option>
                                 @endforeach

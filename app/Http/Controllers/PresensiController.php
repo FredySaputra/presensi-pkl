@@ -36,11 +36,30 @@ class PresensiController extends Controller
         $message = '';
 
         if ($presensiHariIni) {
-            // PERBAIKAN: Pengecekan jam pulang dihapus.
-            // Setiap tap setelah presensi masuk akan selalu memperbarui jam pulang.
-            $presensiHariIni->jam_pulang = $now->toTimeString();
-            $presensiHariIni->save();
-            $message = 'Jam Pulang Berhasil Diperbarui!';
+           // PRESENSI PULANG (LOGIKA BARU)
+                $presensiHariIni->jam_pulang = $now->toTimeString();
+
+                // Hitung durasi
+                $jamMasuk = Carbon::parse($presensiHariIni->jam_masuk);
+                $jamPulang = Carbon::parse($presensiHariIni->jam_pulang);
+                $durasiMenit = $jamPulang->diffInMinutes($jamMasuk);
+                $limaJamDalamMenit = 5 * 60;
+
+                // Tentukan status berdasarkan durasi
+                if ($durasiMenit < $limaJamDalamMenit) {
+                    $presensiHariIni->status = 'Kurang';
+                } else {
+                    $presensiHariIni->status = 'Hadir';
+                }
+
+                $presensiHariIni->save();
+
+                return response()->json([
+                    'message' => 'Presensi Pulang Berhasil. Selamat Jalan!',
+                    'student' => $siswa,
+                    'status_class' => 'success'
+                ]);
+
         } else {
             // Jika belum ada presensi, buat data presensi masuk.
             Presensi::create([
