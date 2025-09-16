@@ -10,6 +10,7 @@ use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\CarbonPeriod;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
@@ -127,58 +128,81 @@ class LaporanController extends Controller
 
     public function cetakPdf(Request $request)
     {
-        $sekolahId = $request->input('sekolah_id');
         $tanggalMulai = $request->input('tanggal_mulai');
         $tanggalSelesai = $request->input('tanggal_selesai');
+        $sekolahId = $request->input('sekolah_id');
 
-        $query = Siswa::query()->with('sekolah');
+        $siswaQuery = Siswa::query()->with('sekolah');
         if ($sekolahId) {
-            $query->where('sekolah_id', $sekolahId);
+            $siswaQuery->where('sekolah_id', $sekolahId);
         }
-        $siswas = $query->orderBy('nama_siswa', 'asc')->get();
-        $sekolah = $sekolahId ? Sekolah::find($sekolahId) : null;
 
-        $presensis = Presensi::whereIn('siswa_id', $siswas->pluck('id'))
+        $semuaKelompokSiswa = $siswaQuery->orderBy('nama_siswa', 'asc')->get()->chunk(5);
+
+        if ($semuaKelompokSiswa->isEmpty() || $semuaKelompokSiswa->first()->isEmpty()) {
+            return back()->with('error', 'Tidak ada data siswa untuk dicetak pada filter yang dipilih.');
+        }
+
+        $period = CarbonPeriod::create($tanggalMulai, $tanggalSelesai);
+        $siswaIds = $siswaQuery->pluck('id');
+
+        $presensis = Presensi::whereIn('siswa_id', $siswaIds)
             ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai])
             ->get()
-            ->groupBy('tanggal')
-            ->map(function ($dailyPresensis) {
-                return $dailyPresensis->keyBy('siswa_id');
-            });
+            ->groupBy(fn($date) => Carbon::parse($date->tanggal)->format('Y-m-d'));
 
-        $period = Carbon::parse($tanggalMulai)->toPeriod($tanggalSelesai);
-        $dates = collect($period)->map(fn ($date) => $date->format('Y-m-d'));
+        $sekolahs = Sekolah::whereIn('id', $siswaQuery->pluck('sekolah_id'))->get()->keyBy('id');
+        $semuaSiswaMap = Siswa::whereIn('id', $siswaIds)->get()->keyBy('id');
 
-        // Logika untuk menandai hari libur
-        $pivotData = $dates->mapWithKeys(function ($tanggal) use ($siswas, $presensis) {
-            $dailyData = $siswas->mapWithKeys(function ($siswa) use ($tanggal, $presensis) {
-                $date = Carbon::parse($tanggal);
-                $isSunday = $date->isSunday();
-                // dayOfWeekIso: Senin=1, Selasa=2, ..., Minggu=7. Hari libur umum di Indonesia adalah Minggu (7)
-                $isSpecificHoliday = $siswa->sekolah->hari_libur && $date->dayOfWeekIso == $siswa->sekolah->hari_libur;
+        $tanggalData = collect();
+        foreach ($period as $date) {
+            $tanggalStr = $date->format('Y-m-d');
+            $dataPresensiPerTanggal = collect();
 
-                $presensiSiswa = $presensis->get($tanggal, collect())->get($siswa->id);
-                
-                $data = ['masuk' => '-', 'pulang' => '-'];
-                if ($isSunday || $isSpecificHoliday) {
-                    $data = ['masuk' => 'LIBUR', 'pulang' => 'LIBUR'];
-                } elseif ($presensiSiswa) {
-                    if ($presensiSiswa->status === 'Izin') {
-                         $data = ['masuk' => 'IZIN', 'pulang' => '-'];
+            foreach ($siswaIds as $siswaId) {
+                $presensiSiswa = optional($presensis->get($tanggalStr))->firstWhere('siswa_id', $siswaId);
+
+                if ($presensiSiswa) {
+                    $dataPresensiPerTanggal->push([
+                        'siswa_id' => $siswaId,
+                        'status' => $presensiSiswa->status,
+                        'jam_masuk' => $presensiSiswa->jam_masuk,
+                        'jam_pulang' => $presensiSiswa->jam_pulang,
+                    ]);
+                } else {
+                    $siswa = $semuaSiswaMap->get($siswaId);
+                    $sekolah = $sekolahs->get($siswa->sekolah_id);
+
+                    // --- PERBAIKAN DI SINI ---
+                    // Decode JSON dan pastikan hasilnya adalah array untuk mencegah error
+                    $hariLiburSekolah = json_decode($sekolah->hari_libur ?? '[]', true);
+                    if (!is_array($hariLiburSekolah)) {
+                        $hariLiburSekolah = [];
+                    }
+                    // --- AKHIR PERBAIKAN ---
+
+                    $dayOfWeek = $date->dayOfWeek;
+
+                    if ($dayOfWeek == Carbon::SUNDAY || in_array($dayOfWeek, $hariLiburSekolah)) {
+                        $dataPresensiPerTanggal->push(['siswa_id' => $siswaId, 'status' => 'LIBUR']);
                     } else {
-                        $data = [
-                            'masuk' => $presensiSiswa->jam_masuk ? Carbon::parse($presensiSiswa->jam_masuk)->format('H:i') : '-',
-                            'pulang' => $presensiSiswa->jam_pulang ? Carbon::parse($presensiSiswa->jam_pulang)->format('H:i') : '-',
-                        ];
+                        $dataPresensiPerTanggal->push(['siswa_id' => $siswaId, 'status' => 'Alpa']);
                     }
                 }
-                return [$siswa->id => $data];
-            });
-            return [$tanggal => $dailyData];
-        });
+            }
+            $tanggalData->put($tanggalStr, $dataPresensiPerTanggal);
+        }
 
-        $siswaChunks = $siswas->chunk(5);
-        $pdf = Pdf::loadView('admin.laporan.pdf', compact('siswaChunks', 'pivotData', 'dates', 'tanggalMulai', 'tanggalSelesai', 'sekolah'));
+        $sekolah = $sekolahId ? Sekolah::find($sekolahId) : null;
+
+        $pdf = PDF::loadView('admin.laporan.pdf', [
+            'semuaKelompokSiswa' => $semuaKelompokSiswa,
+            'tanggalData' => $tanggalData,
+            'tanggalMulai' => $tanggalMulai,
+            'tanggalSelesai' => $tanggalSelesai,
+            'sekolah' => $sekolah,
+        ]);
+
         return $pdf->stream('laporan-presensi.pdf');
     }
 
