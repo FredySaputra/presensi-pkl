@@ -172,7 +172,13 @@ class LaporanController extends Controller
                 } else {
                     $siswa = $semuaSiswaMap->get($siswaId);
                     $sekolah = $sekolahs->get($siswa->sekolah_id);
+
+                    // --- PERBAIKAN FINAL DI SINI ---
+                    // Decode JSON, kemudian paksa hasilnya menjadi array jika gagal atau bukan array
                     $hariLiburSekolah = json_decode($sekolah->hari_libur ?? '[]', true);
+                    $hariLiburSekolah = is_array($hariLiburSekolah) ? $hariLiburSekolah : [];
+                    // --- AKHIR PERBAIKAN ---
+                    
                     $dayOfWeek = $date->dayOfWeek;
 
                     if ($dayOfWeek == Carbon::SUNDAY || in_array($dayOfWeek, $hariLiburSekolah)) {
