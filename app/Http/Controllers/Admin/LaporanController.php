@@ -102,15 +102,27 @@ class LaporanController extends Controller
                 ->whereDate('tanggal', $request->tanggal)
                 ->delete();
 
-        Presensi::create([
-            'siswa_id' => $request->siswa_id,
-            'tanggal' => $request->tanggal,
-            'jam_masuk' => $request->jam_masuk,
-            'jam_pulang' => $request->jam_pulang,
-            'status' => 'Hadir',
-        ]);
+        $status = 'Hadir';
+            if ($request->jam_masuk && $request->jam_pulang) {
+                $jamMasuk = Carbon::parse($request->jam_masuk);
+                $jamPulang = Carbon::parse($request->jam_pulang);
+                $durasiMenit = $jamPulang->diffInMinutes($jamMasuk);
+                $limaJamDalamMenit = 5 * 60;
 
-        return redirect()->route('admin.laporan.index')->with('success', 'Presensi manual berhasil disimpan.');
+                if ($durasiMenit < $limaJamDalamMenit) {
+                    $status = 'Kurang';
+                }
+            }
+
+            Presensi::create([
+                'siswa_id' => $request->siswa_id,
+                'tanggal' => $request->tanggal,
+                'jam_masuk' => $request->jam_masuk,
+                'jam_pulang' => $request->jam_pulang,
+                'status' => $status, // Gunakan status yang sudah dihitung
+            ]);
+
+            return redirect()->route('admin.laporan.index')->with('success', 'Presensi manual berhasil disimpan.');
     }
 
     public function cetakPdf(Request $request)
