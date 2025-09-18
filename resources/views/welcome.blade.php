@@ -17,7 +17,7 @@
             font-family: 'Poppins', sans-serif;
             /* Latar belakang gradien dengan pola SVG halus */
             background-color: #f5f7fa;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23c3cfe2' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23c3cfe2' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h5V0h1v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v5h4v1h-4v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4h-5v4h-1v-4H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4v-5H0v-1h4V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4h5V0h1v4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             overflow: hidden;
         }
         .container-fluid {
@@ -156,7 +156,7 @@
                 </div>
                  <div id="student-info" class="student-info mt-2"></div>
                  <div id="focus-indicator" class="focus-indicator-box mt-3">
-                    <span></span>
+                     <span></span>
                  </div>
             </div>
         </div>
@@ -212,67 +212,67 @@
             function getDetailedStatus(presensi) {
                 let detailText = '';
                 let statusBadge = '';
+                const tanggalPresensi = presensi.tanggal;
+                const jamMasuk = presensi.jam_masuk;
+                const jamPulang = presensi.jam_pulang;
 
-                // PERBAIKAN: Handle kasus Izin/Alpa
-                if (presensi.status !== 'Hadir') {
+                // Handle kasus Izin atau Alpa terlebih dahulu
+                if (presensi.status !== 'Hadir' && presensi.status !== 'Kurang') {
                     detailText = presensi.keterangan || presensi.status;
                     const badgeClass = presensi.status === 'Izin' ? 'bg-info' : 'bg-secondary';
                     statusBadge = `<span class="badge ${badgeClass} text-white">${presensi.status}</span>`;
                     return { detailText, statusBadge };
                 }
+                
+                // Tentukan batas waktu
+                const batasMasuk = new Date(`${tanggalPresensi}T09:00:00`);
+                const batasPulang = new Date(`${tanggalPresensi}T15:00:00`);
 
-                const jamMasuk = presensi.jam_masuk;
-                const jamPulang = presensi.jam_pulang;
-
-                const batasMasuk = new Date();
-                batasMasuk.setHours(9, 0, 0, 0);
-                const batasPulang = new Date();
-                batasPulang.setHours(15, 0, 0, 0);
-
-                if (jamPulang) {
-                    const waktuPulang = new Date();
-                    // PERBAIKAN: Cek jika jamPulang tidak null sebelum split
-                    if(jamPulang) {
-                        const [h, m, s] = jamPulang.split(':');
-                        waktuPulang.setHours(h, m, s, 0);
-                        if (waktuPulang < batasPulang) {
-                            const diff = Math.round((batasPulang - waktuPulang) / 60000);
-                            detailText = `Pulang ${diff} menit lebih awal`;
-                        } else {
-                            detailText = 'Pulang Tepat Waktu';
-                        }
+                // Tentukan teks detail untuk jam masuk
+                if (jamMasuk) {
+                    const waktuMasuk = new Date(`${tanggalPresensi}T${jamMasuk}`);
+                    if (waktuMasuk > batasMasuk) {
+                        const diff = Math.round((waktuMasuk - batasMasuk) / 60000);
+                        detailText = `Telat ${diff} menit`;
+                    } else {
+                        detailText = 'Tepat Waktu';
                     }
-                    statusBadge = `<span class="badge bg-secondary text-white">Pulang ${jamPulang ? jamPulang.substring(0, 5) : ''}</span>`;
-                } else {
-                    const waktuMasuk = new Date();
-                    // PERBAIKAN: Cek jika jamMasuk tidak null sebelum split
-                    if(jamMasuk) {
-                        const [h, m, s] = jamMasuk.split(':');
-                        waktuMasuk.setHours(h, m, s, 0);
-                        if (waktuMasuk > batasMasuk) {
-                            const diff = Math.round((waktuMasuk - batasMasuk) / 60000);
-                            detailText = `Telat ${diff} menit`;
-                        } else {
-                            detailText = 'Tepat Waktu';
-                        }
-                    }
-                    statusBadge = `<span class="badge bg-primary text-white">Hadir ${jamMasuk ? jamMasuk.substring(0, 5) : ''}</span>`;
                 }
+
+                // Tentukan badge dan tambahkan detail jam pulang jika ada
+                if (jamPulang) {
+                    const waktuPulang = new Date(`${tanggalPresensi}T${jamPulang}`);
+                     if (waktuPulang < batasPulang) {
+                        const diff = Math.round((batasPulang - waktuPulang) / 60000);
+                        // Tambahkan pemisah jika sudah ada keterangan telat
+                        if (detailText) detailText += ' | ';
+                        detailText += `Pulang ${diff} menit lebih awal`;
+                    }
+                    
+                    if (presensi.status === 'Kurang') {
+                        statusBadge = `<span class="badge bg-danger text-white">Kurang</span>`;
+                    } else { // Status pasti 'Hadir'
+                        statusBadge = `<span class="badge bg-success text-white">Hadir | Pulang ${jamPulang.substring(0, 5)}</span>`;
+                    }
+                } else { // Jika hanya ada jam masuk
+                    statusBadge = `<span class="badge bg-primary text-white">Hadir | Masuk ${jamMasuk ? jamMasuk.substring(0, 5) : ''}</span>`;
+                }
+
                 return { detailText, statusBadge };
             }
 
             schoolIds.forEach(schoolId => {
-                const attendees = groupedAttendees[schoolId];
-                if (!attendees || attendees.length === 0 || !attendees[0].siswa || !attendees[0].siswa.sekolah) return;
+                const attendeesData = groupedAttendees[schoolId];
+                if (!attendeesData || !attendeesData.siswa || attendeesData.siswa.length === 0) return;
                 
-                const schoolName = attendees[0].siswa.sekolah.nama_sekolah;
+                const schoolName = attendeesData.nama_sekolah;
                 const isActive = schoolId == firstSchoolId;
 
                 const tabLink = `<li class="nav-item"><a class="nav-link ${isActive ? 'active' : ''}" id="tab-${schoolId}" data-bs-toggle="tab" href="#pane-${schoolId}" role="tab">${schoolName}</a></li>`;
                 tabsContainer.append(tabLink);
 
                 let listItems = '';
-                attendees.forEach(function(presensi) {
+                attendeesData.siswa.forEach(function(presensi) {
                     const { detailText, statusBadge } = getDetailedStatus(presensi);
                     listItems += `
                         <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -284,7 +284,7 @@
                         </li>`;
                 });
 
-                const tabPane = `<div class="tab-pane fade ${isActive ? 'show active' : ''}" id="pane-${schoolId}" role="tabpanel"><ul class="list-group list-group-flush">${listItems}</ul></div>`;
+                const tabPane = `<div class="tab-pane fade ${isActive ? 'show active' : ''}" id="pane-${schoolId}" role="tabpanel"><ul class="list-group list-group-flush attendee-list">${listItems}</ul></div>`;
                 contentContainer.append(tabPane);
             });
         }
@@ -314,11 +314,11 @@
         $('#schoolTabs').on('shown.bs.tab', 'a', function (e) {
             setFocus();
         });
-
+        // --- END LOGIKA INDIKATOR FOKUS ---
 
         // Inisialisasi saat halaman dimuat
         $(document).ready(function() {
-            const initialData = {!! json_encode($presensiHariIni ?? []) !!};
+            const initialData = {!! json_encode($daftarHadir ?? []) !!};
             updateTabs(initialData);
             checkFocus();
         });
@@ -337,16 +337,16 @@
             axios.post('{{ route("presensi.store") }}', { id_kartu: id_kartu, _token: '{{ csrf_token() }}' })
             .then(function(response) {
                 const res = response.data;
-                const statusClass = res.status_class === 'success' ? 'alert-success' : 'alert-warning';
-                const icon = res.status_class === 'success' ? '<i class="fa-solid fa-check-circle fa-2x mb-2"></i>' : '<i class="fa-solid fa-info-circle fa-2x mb-2"></i>';
+                const statusClass = res.status_class === 'success' ? 'alert-success' : (res.status_class === 'warning' ? 'alert-warning' : 'alert-info');
+                const icon = res.status_class === 'success' ? '<i class="fa-solid fa-check-circle fa-2x mb-2"></i>' : '<i class="fa-solid fa-exclamation-triangle fa-2x mb-2"></i>';
                 
                 statusDiv.removeClass().addClass(`alert ${statusClass} status-message`).html(`${icon}<h5>${res.message}</h5>`);
                 
                 if(res.student) {
                     studentInfoDiv.html(`<strong>${res.student.nama_siswa}</strong><br><small>${res.student.sekolah.nama_sekolah}</small>`);
                 }
-                if (res.attendees) {
-                    updateTabs(res.attendees, res.active_school_id);
+                if (res.daftarHadir) {
+                    updateTabs(res.daftarHadir, res.sekolah_id);
                 }
             })
             .catch(function(error) {
@@ -364,7 +364,7 @@
                 .then(function(response) {
                     const activeTabId = $('#schoolTabs .nav-link.active').attr('id');
                     let activeSchoolId = activeTabId ? activeTabId.replace('tab-', '') : null;
-                    updateTabs(response.data, activeSchoolId);
+                    updateTabs(response.data.daftarHadir, activeSchoolId);
                 })
                 .catch(function(error) {
                     console.error('Gagal mengambil data presensi terbaru:', error);
@@ -373,3 +373,4 @@
     </script>
 </body>
 </html>
+
