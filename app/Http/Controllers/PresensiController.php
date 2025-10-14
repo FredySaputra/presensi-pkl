@@ -5,86 +5,54 @@ namespace App\Http\Controllers;
 use App\Models\Presensi;
 use App\Models\Siswa;
 use App\Models\Sekolah;
-use Carbon\Carbon as CarbonCarbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon as SupportCarbon;
-use Illuminate\Support\Facades\Carbon;
+use Carbon\Carbon;
 
 class PresensiController extends Controller
 {
     public function index()
     {
-        $today = today();
-        
-        // Mengambil data presensi hari ini untuk siswa yang aktif
-        $presensisData = Presensi::with(['siswa.sekolah'])
-            ->whereDate('tanggal', $today)
-            ->whereNotNull('jam_masuk')
-            ->whereHas('siswa', function ($query) use ($today) {
-                $query->whereDate('mulai_pkl', '<=', $today)->whereDate('selesai_pkl', '>=', $today);
-            })
-            ->orderBy('jam_masuk', 'desc')
-            ->get();
-
-        // Mengelompokkan data berdasarkan sekolah untuk tampilan tab
-        $daftarHadir = [];
-        foreach ($presensisData as $presensi) {
-            $sekolahId = $presensi->siswa->sekolah->id;
-            $namaSekolah = $presensi->siswa->sekolah->nama_sekolah;
-
-            if (!isset($daftarHadir[$sekolahId])) {
-                $daftarHadir[$sekolahId] = [
-                    'nama_sekolah' => $namaSekolah,
-                    'siswa' => []
-                ];
-            }
-            $daftarHadir[$sekolahId]['siswa'][] = $presensi;
-        }
-
-        return view('welcome', compact('daftarHadir'));
+        $data = $this->getAttendanceDataLogic();
+        return view('welcome', ['daftarHadir' => $data['daftarHadir']]);
     }
 
     public function store(Request $request)
     {
         $request->validate(['id_kartu' => 'required|string']);
-
-        $siswa = Siswa::with('sekolah')->where('id_kartu', $request->id_kartu)->first();
+        $idKartu = preg_replace('/\s+/', '', $request->id_kartu);
+        $siswa = Siswa::with('sekolah')->where('id_kartu', $idKartu)->first();
 
         if (!$siswa) {
             return response()->json(['message' => 'ID Kartu Tidak Terdaftar!', 'status_class' => 'danger'], 404);
         }
 
         $today = today();
-        if (!$today->between(CarbonCarbon::parse($siswa->mulai_pkl), CarbonCarbon::parse($siswa->selesai_pkl))) {
+        if (!$today->between($siswa->mulai_pkl, $siswa->selesai_pkl)) {
             return response()->json(['message' => 'Masa PKL siswa ini sudah berakhir atau belum dimulai.', 'student' => $siswa, 'status_class' => 'warning'], 400);
         }
 
         $presensiHariIni = Presensi::where('siswa_id', $siswa->id)
                                    ->whereDate('tanggal', $today)
                                    ->first();
-
         $now = now();
 
         if ($presensiHariIni) {
-            // --- LOGIKA PRESENSI PULANG ---
             $presensiHariIni->jam_pulang = $now->toTimeString();
 
-            // Hitung durasi dalam menit
-            $jamMasuk = CarbonCarbon::parse($presensiHariIni->jam_masuk);
-            $jamPulang = CarbonCarbon::parse($presensiHariIni->jam_pulang);
+            $jamMasuk = Carbon::parse($presensiHariIni->jam_masuk);
+            $jamPulang = Carbon::parse($presensiHariIni->jam_pulang);
             $durasiMenit = $jamPulang->diffInMinutes($jamMasuk);
             $limaJamDalamMenit = 5 * 60;
 
-            // Tentukan status berdasarkan durasi
             if ($durasiMenit < $limaJamDalamMenit) {
-                $presensiHariIni->status = 'Kurang'; // Status "Kurang" yang benar
+                $presensiHariIni->status = 'Kurang';
             } else {
-                $presensiHariIni->status = 'Hadir'; // Kembali ke "Hadir" jika >= 5 jam
+                $presensiHariIni->status = 'Hadir';
             }
             
             $presensiHariIni->save();
-
             $presensisData = $this->getAttendanceDataLogic();
+            
             return response()->json([
                 'message' => 'Jam Pulang Diperbarui!',
                 'student' => $siswa,
@@ -94,17 +62,16 @@ class PresensiController extends Controller
             ]);
 
         } else {
-            // --- LOGIKA PRESENSI MASUK ---
             Presensi::create([
                 'siswa_id' => $siswa->id,
                 'tanggal' => $today->toDateString(),
                 'jam_masuk' => $now->toTimeString(),
-                'status' => 'Hadir', // Status awal saat masuk adalah "Hadir"
+                'status' => 'Hadir',
             ]);
             
             $presensisData = $this->getAttendanceDataLogic();
             return response()->json([
-                'message' => 'Presensi MasUK Berhasil. Selamat Datang!',
+                'message' => 'Presensi Masuk Berhasil. Selamat Datang!',
                 'student' => $siswa,
                 'status_class' => 'success',
                 'daftarHadir' => $presensisData['daftarHadir'],
@@ -119,33 +86,34 @@ class PresensiController extends Controller
         return response()->json($data);
     }
     
-    // Fungsi helper untuk mengambil data daftar hadir
     private function getAttendanceDataLogic()
     {
         $today = today();
-        $presensisData = Presensi::with(['siswa.sekolah'])
+        $semuaPresensiHariIni = Presensi::with(['siswa.sekolah'])
             ->whereDate('tanggal', $today)
             ->whereNotNull('jam_masuk')
-            ->whereHas('siswa', function ($query) use ($today) {
-                $query->whereDate('mulai_pkl', '<=', $today)->whereDate('selesai_pkl', '>=', $today);
-            })
             ->orderBy('jam_masuk', 'desc')
             ->get();
+        
+        $presensisData = $semuaPresensiHariIni->filter(function ($presensi) use ($today) {
+            return $presensi->siswa && $today->between($presensi->siswa->mulai_pkl, $presensi->siswa->selesai_pkl);
+        });
 
         $daftarHadir = [];
         foreach ($presensisData as $presensi) {
-            $sekolahId = $presensi->siswa->sekolah->id;
-            $namaSekolah = $presensi->siswa->sekolah->nama_sekolah;
+            if ($presensi->siswa && $presensi->siswa->sekolah) {
+                $sekolahId = $presensi->siswa->sekolah->id;
+                $namaSekolah = $presensi->siswa->sekolah->nama_sekolah;
 
-            if (!isset($daftarHadir[$sekolahId])) {
-                $daftarHadir[$sekolahId] = [
-                    'nama_sekolah' => $namaSekolah,
-                    'siswa' => []
-                ];
+                if (!isset($daftarHadir[$sekolahId])) {
+                    $daftarHadir[$sekolahId] = [
+                        'nama_sekolah' => $namaSekolah,
+                        'siswa' => []
+                    ];
+                }
+                $daftarHadir[$sekolahId]['siswa'][] = $presensi;
             }
-            $daftarHadir[$sekolahId]['siswa'][] = $presensi;
         }
-
         return ['daftarHadir' => $daftarHadir];
     }
 }
