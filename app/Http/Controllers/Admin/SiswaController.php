@@ -83,15 +83,25 @@ class SiswaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_siswa'  => 'required|string|max:255',
-            'sekolah_id'  => 'required|exists:sekolahs,id',
-            'id_kartu'    => 'required|string|max:100|unique:siswas,id_kartu',
-            'mulai_pkl'   => 'required|date',
-            'selesai_pkl' => 'required|date|after_or_equal:mulai_pkl',
+            'sekolah_id' => 'required|exists:sekolahs,id',
+            'mulai_pkl'  => 'required|date',
+            'selesai_pkl' => 'required|date|after:mulai_pkl',
+            'students'    => 'required|array|min:1',
+            'students.*.nama_siswa' => 'required|string|max:255',
+            'students.*.id_kartu'   => 'nullable|string|unique:siswas,id_kartu',
         ]);
-        Siswa::create($request->all());
-        return redirect()->route('admin.siswa.index')
-                         ->with('success', 'Data siswa berhasil ditambahkan.');
+
+        foreach ($request->students as $studentData) {
+            Siswa::create([
+                'sekolah_id'  => $request->sekolah_id,
+                'mulai_pkl'   => $request->mulai_pkl,
+                'selesai_pkl' => $request->selesai_pkl,
+                'nama_siswa'  => $studentData['nama_siswa'],
+                'id_kartu'    => $studentData['id_kartu'],
+            ]);
+        }
+
+        return redirect()->route('admin.siswa.index')->with('success', 'Berhasil menambahkan sekelompok siswa PKL.');
     }
 
     /**
