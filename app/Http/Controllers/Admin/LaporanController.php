@@ -7,25 +7,23 @@ use App\Http\Controllers\Controller;
 use App\Models\Presensi;
 use App\Models\Sekolah;
 use App\Models\Siswa;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonPeriod;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
 {
-    /**
-     * Menampilkan halaman laporan dengan filter dan paginasi.
-     */
     public function index(Request $request)
     {
-        $tanggalMulai = $request->input('tanggal_mulai', Carbon::today()->toDateString());
-        $tanggalSelesai = $request->input('tanggal_selesai', Carbon::today()->toDateString());
+        $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
         $sekolahId = $request->input('sekolah_id');
         $search = $request->input('search');
+        $tanggalMulai = $request->input('tanggal_mulai', Carbon::today()->toDateString());
+        $tanggalSelesai = $request->input('tanggal_selesai', Carbon::today()->toDateString());
 
-        $query = Presensi::query()->with(['siswa.sekolah'])
+        $query = Presensi::with(['siswa.sekolah'])
             ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai]);
 
         if ($sekolahId) {
@@ -36,22 +34,17 @@ class LaporanController extends Controller
 
         if ($search) {
             $query->whereHas('siswa', function ($q) use ($search) {
-                $q->where('nama_siswa', 'like', '%' . $search . '%');
+                $q->where('nama_siswa', 'like', "%{$search}%");
             });
         }
 
         $presensis = $query->orderBy('tanggal', 'desc')->orderBy('jam_masuk', 'desc')->paginate(15);
-        $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
-        
-        // Diperlukan untuk daftar checkbox di modal
+
         $semuaSiswa = Siswa::with('sekolah')->orderBy('nama_siswa', 'asc')->get();
 
-        return view('admin.laporan.index', compact('presensis', 'sekolahs', 'semuaSiswa', 'tanggalMulai', 'tanggalSelesai', 'sekolahId', 'search'));
+        return view('admin.laporan.index', compact('presensis', 'sekolahs', 'sekolahId', 'search', 'tanggalMulai', 'tanggalSelesai', 'semuaSiswa'));
     }
 
-    /**
-     * API untuk AJAX: Mengambil siswa yang belum presensi dan aktif pada tanggal tertentu.
-     */
     public function getSiswaTanpaPresensi(Request $request)
     {
         $request->validate(['tanggal' => 'required|date']);
@@ -67,78 +60,72 @@ class LaporanController extends Controller
             ->where('selesai_pkl', '>=', $tanggal)
             ->orderBy('nama_siswa', 'asc')
             ->get();
-            
+
         return response()->json($siswaTersedia);
     }
 
-    /**
-     * Mencatat izin untuk banyak siswa sekaligus (Massal via Checkbox).
-     */
     public function catatIzin(Request $request)
     {
         $request->validate([
-            'siswa_ids'   => 'required|array|min:1',
-            'siswa_ids.*' => 'exists:siswas,id',
-            'keterangan'  => 'required|string|max:255',
-            'tanggal'     => 'required|date',
+            'tanggal' => 'required|date',
+            'siswa_id' => 'required|exists:siswas,id',
+            'keterangan' => 'required|string|max:255',
         ]);
 
-        foreach ($request->siswa_ids as $siswaId) {
-            Presensi::updateOrCreate(
-                ['siswa_id' => $siswaId, 'tanggal' => $request->tanggal],
-                [
-                    'status' => 'Izin', 
-                    'keterangan' => $request->keterangan, 
-                    'jam_masuk' => null, 
-                    'jam_pulang' => null
-                ]
-            );
+        $sudahAdaPresensi = Presensi::where('siswa_id', $request->siswa_id)
+                                    ->whereDate('tanggal', $request->tanggal)
+                                    ->exists();
+
+        if ($sudahAdaPresensi) {
+            return redirect()->route('admin.laporan.index')->with('error', 'Siswa sudah memiliki data presensi pada tanggal tersebut.');
         }
 
-        return redirect()->route('admin.laporan.index')->with('success', 'Status izin berhasil dicatat untuk siswa terpilih.');
+        Presensi::create([
+            'siswa_id' => $request->siswa_id,
+            'tanggal' => $request->tanggal,
+            'status' => 'Izin',
+            'keterangan' => $request->keterangan,
+        ]);
+
+        return redirect()->route('admin.laporan.index')->with('success', 'Status izin berhasil dicatat.');
     }
-    
-    /**
-     * Mencatat presensi manual untuk banyak siswa sekaligus (Massal via Checkbox).
-     */
+
     public function storeManualPresence(Request $request)
     {
         $request->validate([
-            'siswa_ids'   => 'required|array|min:1',
-            'siswa_ids.*' => 'exists:siswas,id',
-            'tanggal'     => 'required|date',
-            'jam_masuk'   => 'nullable|date_format:H:i',
-            'jam_pulang'  => 'nullable|date_format:H:i|after_or_equal:jam_masuk',
+            'siswa_id' => 'required|exists:siswas,id',
+            'tanggal' => 'required|date',
+            'jam_masuk' => 'nullable|date_format:H:i',
+            'jam_pulang' => 'nullable|date_format:H:i|after_or_equal:jam_masuk',
         ]);
 
+        Presensi::where('siswa_id', $request->siswa_id)
+                ->whereDate('tanggal', $request->tanggal)
+                ->delete();
+
         $status = 'Hadir';
-        if ($request->jam_masuk && $request->jam_pulang) {
-            $jamMasuk = Carbon::parse($request->jam_masuk);
-            $jamPulang = Carbon::parse($request->jam_pulang);
-            // Hadir jika durasi >= 5 jam (300 menit)
-            if ($jamPulang->diffInMinutes($jamMasuk) < 300) {
-                $status = 'Kurang';
+            if ($request->jam_masuk && $request->jam_pulang) {
+                $jamMasuk = Carbon::parse($request->jam_masuk);
+                $jamPulang = Carbon::parse($request->jam_pulang);
+                $durasiMenit = $jamPulang->diffInMinutes($jamMasuk);
+                $limaJamDalamMenit = 5 * 60;
+
+                if ($durasiMenit < $limaJamDalamMenit) {
+                    $status = 'Kurang';
+                }
             }
-        }
 
-        foreach ($request->siswa_ids as $siswaId) {
-            Presensi::updateOrCreate(
-                ['siswa_id' => $siswaId, 'tanggal' => $request->tanggal],
-                [
-                    'jam_masuk' => $request->jam_masuk, 
-                    'jam_pulang' => $request->jam_pulang, 
-                    'status' => $status,
-                    'keterangan' => 'Input Manual'
-                ]
-            );
-        }
+            Presensi::create([
+                'siswa_id' => $request->siswa_id,
+                'tanggal' => $request->tanggal,
+                'jam_masuk' => $request->jam_masuk,
+                'jam_pulang' => $request->jam_pulang,
+                'status' => $status, // Gunakan status yang sudah dihitung
+            ]);
 
-        return redirect()->route('admin.laporan.index')->with('success', 'Presensi manual berhasil disimpan.');
+            return redirect()->route('admin.laporan.index')->with('success', 'Presensi manual berhasil disimpan.');
     }
 
-    /**
-     * Membuat laporan presensi dalam format PDF (Versi Pivot/Matriks).
-     */
     public function cetakPdf(Request $request)
     {
         $tanggalMulai = $request->input('tanggal_mulai');
@@ -150,70 +137,79 @@ class LaporanController extends Controller
             $siswaQuery->where('sekolah_id', $sekolahId);
         }
 
-        $siswas = $siswaQuery->orderBy('nama_siswa', 'asc')->get();
-        $sekolah = $sekolahId ? Sekolah::find($sekolahId) : null;
+        $semuaKelompokSiswa = $siswaQuery->orderBy('nama_siswa', 'asc')->get()->chunk(5);
 
-        if ($siswas->isEmpty()) {
-            return back()->with('error', 'Tidak ada data siswa untuk dicetak.');
+        if ($semuaKelompokSiswa->isEmpty() || $semuaKelompokSiswa->first()->isEmpty()) {
+            return back()->with('error', 'Tidak ada data siswa untuk dicetak pada filter yang dipilih.');
         }
 
-        $presensis = Presensi::whereIn('siswa_id', $siswas->pluck('id'))
+        $period = CarbonPeriod::create($tanggalMulai, $tanggalSelesai);
+        $siswaIds = $siswaQuery->pluck('id');
+
+        $presensis = Presensi::whereIn('siswa_id', $siswaIds)
             ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai])
             ->get()
-            ->groupBy('tanggal')
-            ->map(fn($items) => $items->keyBy('siswa_id'));
+            ->groupBy(fn($date) => Carbon::parse($date->tanggal)->format('Y-m-d'));
 
-        $period = CarbonPeriod::create($tanggalMulai, $tanggalSelesai);
-        $dates = collect($period)->map(fn($date) => $date->format('Y-m-d'));
+        $sekolahs = Sekolah::whereIn('id', $siswaQuery->pluck('sekolah_id'))->get()->keyBy('id');
+        $semuaSiswaMap = Siswa::whereIn('id', $siswaIds)->get()->keyBy('id');
 
-        // Membangun data pivot untuk ditampilkan di tabel PDF
-        $pivotData = $dates->mapWithKeys(function ($tanggal) use ($siswas, $presensis) {
-            $dailyData = $siswas->mapWithKeys(function ($siswa) use ($tanggal, $presensis) {
-                $date = Carbon::parse($tanggal);
-                $isSunday = $date->isSunday();
-                
-                // Cek Hari Libur Sekolah (Menangani tipe data integer atau array secara aman)
-                $hariLiburSekolah = $siswa->sekolah->hari_libur;
-                $isSpecificHoliday = false;
-                if ($hariLiburSekolah) {
-                    $isSpecificHoliday = $date->dayOfWeekIso == $hariLiburSekolah;
+        $tanggalData = collect();
+        foreach ($period as $date) {
+            $tanggalStr = $date->format('Y-m-d');
+            $dataPresensiPerTanggal = collect();
+
+            foreach ($siswaIds as $siswaId) {
+                $presensiSiswa = optional($presensis->get($tanggalStr))->firstWhere('siswa_id', $siswaId);
+
+                if ($presensiSiswa) {
+                    $dataPresensiPerTanggal->push([
+                        'siswa_id' => $siswaId,
+                        'status' => $presensiSiswa->status,
+                        'jam_masuk' => $presensiSiswa->jam_masuk,
+                        'jam_pulang' => $presensiSiswa->jam_pulang,
+                    ]);
+                } else {
+                    $siswa = $semuaSiswaMap->get($siswaId);
+                    $sekolah = $sekolahs->get($siswa->sekolah_id);
+
+                    // --- PERBAIKAN FINAL DI SINI ---
+                    // Decode JSON, kemudian paksa hasilnya menjadi array jika gagal atau bukan array
+                    $hariLiburSekolah = json_decode($sekolah->hari_libur ?? '[]', true);
+                    $hariLiburSekolah = is_array($hariLiburSekolah) ? $hariLiburSekolah : [];
+                    // --- AKHIR PERBAIKAN ---
+                    
+                    $dayOfWeek = $date->dayOfWeek;
+
+                    if ($dayOfWeek == Carbon::SUNDAY || in_array($dayOfWeek, $hariLiburSekolah)) {
+                        $dataPresensiPerTanggal->push(['siswa_id' => $siswaId, 'status' => 'LIBUR']);
+                    } else {
+                        $dataPresensiPerTanggal->push(['siswa_id' => $siswaId, 'status' => 'Alpa']);
+                    }
                 }
+            }
+            $tanggalData->put($tanggalStr, $dataPresensiPerTanggal);
+        }
 
-                $presensiSiswa = $presensis->get($tanggal, collect())->get($siswa->id);
-                
-                $data = ['masuk' => '-', 'pulang' => '-', 'status' => 'Alpa'];
-                
-                if ($isSunday || $isSpecificHoliday) {
-                    $data = ['masuk' => 'LIBUR', 'pulang' => 'LIBUR', 'status' => 'LIBUR'];
-                } elseif ($presensiSiswa) {
-                    $data = [
-                        'masuk' => $presensiSiswa->jam_masuk ? Carbon::parse($presensiSiswa->jam_masuk)->format('H:i') : ($presensiSiswa->status == 'Izin' ? 'IZIN' : '-'),
-                        'pulang' => $presensiSiswa->jam_pulang ? Carbon::parse($presensiSiswa->jam_pulang)->format('H:i') : '-',
-                        'status' => $presensiSiswa->status
-                    ];
-                }
-                
-                return [$siswa->id => $data];
-            });
-            return [$tanggal => $dailyData];
-        });
+        $sekolah = $sekolahId ? Sekolah::find($sekolahId) : null;
 
-        $semuaKelompokSiswa = $siswas->chunk(5);
-
-        $pdf = Pdf::loadView('admin.laporan.pdf', [
+        $pdf = PDF::loadView('admin.laporan.pdf', [
             'semuaKelompokSiswa' => $semuaKelompokSiswa,
-            'pivotData' => $pivotData,
+            'tanggalData' => $tanggalData,
             'tanggalMulai' => $tanggalMulai,
             'tanggalSelesai' => $tanggalSelesai,
-            'dates' => $dates,
             'sekolah' => $sekolah,
-        ])->setPaper('a4', 'landscape');
+        ]);
 
         return $pdf->stream('laporan-presensi.pdf');
     }
 
     public function cetakExcel(Request $request)
     {
-        return Excel::download(new LaporanPresensiExport($request->input('tanggal_mulai'), $request->input('tanggal_selesai'), $request->input('sekolah_id')), 'laporan-presensi.xlsx');
+        $tanggalMulai = $request->input('tanggal_mulai');
+        $tanggalSelesai = $request->input('tanggal_selesai');
+        $sekolahId = $request->input('sekolah_id');
+
+        return Excel::download(new LaporanPresensiExport($tanggalMulai, $tanggalSelesai, $sekolahId), 'laporan-presensi.xlsx');
     }
 }

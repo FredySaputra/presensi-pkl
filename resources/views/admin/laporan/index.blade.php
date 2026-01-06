@@ -64,7 +64,6 @@
                     </div>
                 </div>
             </form>
-            {{-- Form tersembunyi untuk tombol cetak --}}
             <form id="cetakPdfForm" action="{{ route('admin.laporan.cetak_pdf') }}" method="POST" target="_blank" class="d-none">
                 @csrf
                 <input type="hidden" name="tanggal_mulai" value="{{ $tanggalMulai }}">
@@ -134,8 +133,7 @@
                                             $jamMasuk = \Carbon\Carbon::parse($presensi->jam_masuk);
                                             $batasMasuk = \Carbon\Carbon::parse($presensi->tanggal . ' 09:00:00');
                                             if ($jamMasuk->gt($batasMasuk)) {
-                                                $diff = $jamMasuk->diff($batasMasuk);
-                                                $keterangan = 'Telat ' . ($diff->h > 0 ? $diff->h . ' jam ' : '') . $diff->i . ' menit';
+                                                $keterangan = 'Telat ' . $jamMasuk->diffForHumans($batasMasuk, ['parts' => 2, 'short' => true]);
                                             } else {
                                                 $keterangan = 'Tepat Waktu';
                                             }
@@ -145,9 +143,7 @@
                                             $jamPulang = \Carbon\Carbon::parse($presensi->jam_pulang);
                                             $batasPulang = \Carbon\Carbon::parse($presensi->tanggal . ' 15:00:00');
                                             if ($jamPulang->lt($batasPulang)) {
-                                                if($keterangan) $keterangan .= ' | ';
-                                                $diff = $jamPulang->diff($batasPulang);
-                                                $keterangan .= 'Pulang Awal ' . ($diff->h > 0 ? $diff->h . ' jam ' : '') . $diff->i . ' menit';
+                                                $keterangan .= ' | Pulang Awal ' . $jamPulang->diffForHumans($batasPulang, ['parts' => 2, 'short' => true]);
                                             }
                                         }
                                     }
@@ -171,12 +167,12 @@
         </div>
     </div>
 
-    <!-- Modal Catat Izin (Massal) -->
+    <!-- Modal Catat Izin -->
     <div class="modal fade" id="izinModal" tabindex="-1" role="dialog" aria-labelledby="izinModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="izinModalLabel">Catat Izin Siswa Massal</h5>
+                    <h5 class="modal-title" id="izinModalLabel">Catat Izin Siswa</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -184,36 +180,36 @@
                 <form action="{{ route('admin.laporan.izin') }}" method="POST">
                     @csrf
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="izin_tanggal">Pilih Tanggal Izin</label>
-                                    <input type="date" id="izin_tanggal" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="izin_keterangan">Keterangan Izin</label>
-                                    <input type="text" id="izin_keterangan" name="keterangan" class="form-control" required placeholder="Contoh: Sakit">
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label for="izin_tanggal">Pilih Tanggal Izin</label>
+                            <input type="date" id="izin_tanggal" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
                         <hr>
-                        <div class="form-group">
-                            <label>Pilih Siswa (Hanya yang belum presensi)</label>
-                            <input type="text" id="searchSiswaIzin" class="form-control mb-2" placeholder="Cari nama siswa...">
-                            <div id="izin_loading" class="text-center my-3" style="display: none;">
-                                <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
-                                <p>Mencari siswa yang tersedia...</p>
+                        <div id="izin_lanjutan" style="display: none;">
+                            <div class="form-group">
+                                <label for="izin_siswa_id">Pilih Siswa (Hanya yang belum presensi)</label>
+                                <select id="izin_siswa_id" name="siswa_id" class="form-control" required>
+                                    <option value="">-- Memuat Siswa --</option>
+                                </select>
                             </div>
-                            <div id="izin-checkbox-list" style="height: 300px; overflow-y: auto; border: 1px solid #ced4da; padding: 10px; border-radius: 5px;">
-                                {{-- Daftar siswa akan dimuat oleh JavaScript --}}
+                            <div class="form-group">
+                                <label for="izin_keterangan">Keterangan Izin</label>
+                                <textarea id="izin_keterangan" name="keterangan" class="form-control" rows="3" required></textarea>
                             </div>
+                        </div>
+                         <div id="izin_loading" class="text-center" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p>Mencari siswa yang tersedia...</p>
+                        </div>
+                        <div id="izin_info" class="text-center">
+                            <p class="text-muted">Pilih tanggal untuk melihat siswa yang bisa diizinkan.</p>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Izin</button>
+                        <button type="submit" id="izin_submit_button" class="btn btn-primary" disabled>Simpan</button>
                     </div>
                 </form>
             </div>
@@ -221,12 +217,12 @@
     </div>
 
     
-    {{-- Modal Presensi Manual Massal --}}
+    {{-- Modal Presensi Manual --}}
     <div class="modal fade" id="manualModal" tabindex="-1" role="dialog" aria-labelledby="manualModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="manualModalLabel">Input Presensi Manual Massal</h5>
+                    <h5 class="modal-title" id="manualModalLabel">Input Presensi Manual</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -234,45 +230,31 @@
                 <form action="{{ route('admin.laporan.manual') }}" method="POST">
                     @csrf
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="tanggal">Tanggal</label>
-                                    <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="jam_masuk">Jam Masuk</label>
-                                    <input type="time" name="jam_masuk" class="form-control">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="jam_pulang">Jam Pulang (Opsional)</label>
-                                    <input type="time" name="jam_pulang" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                        <hr>
                         <div class="form-group">
-                            <label>Pilih Siswa</label>
-                            <input type="text" id="searchSiswa" class="form-control mb-2" placeholder="Cari nama siswa...">
-                            <div id="siswa-checkbox-list" style="height: 300px; overflow-y: auto; border: 1px solid #ced4da; padding: 10px; border-radius: 5px;">
+                            <label for="siswa_id_manual">Pilih Siswa</label>
+                            <select name="siswa_id" id="siswa_id_manual" class="form-control" required>
+                                <option value="">-- Pilih Siswa --</option>
                                 @foreach($semuaSiswa as $siswa)
-                                    <div class="form-check siswa-item">
-                                        <input class="form-check-input" type="checkbox" name="siswa_ids[]" value="{{ $siswa->id }}" id="siswa_{{ $siswa->id }}">
-                                        <label class="form-check-label" for="siswa_{{ $siswa->id }}">
-                                            {{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})
-                                        </label>
-                                    </div>
+                                    <option value="{{ $siswa->id }}">{{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})</option>
                                 @endforeach
-                            </div>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tanggal">Tanggal</label>
+                            <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="jam_masuk">Jam Masuk</label>
+                            <input type="time" name="jam_masuk" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="jam_pulang">Jam Pulang (Opsional)</label>
+                            <input type="time" name="jam_pulang" class="form-control">
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Presensi</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
                     </div>
                 </form>
             </div>
@@ -283,13 +265,15 @@
 @section('js')
 <script>
 $(document).ready(function() {
-    // --- SCRIPT UNTUK MODAL IZIN ---
-    function fetchAvailableStudentsForIzin() {
+    function fetchAvailableStudents() {
         var tanggal = $('#izin_tanggal').val();
         if (!tanggal) return;
 
-        $('#izin-checkbox-list').html('');
+        $('#izin_lanjutan').hide();
+        $('#izin_info').hide();
         $('#izin_loading').show();
+        $('#izin_submit_button').prop('disabled', true);
+        $('#izin_siswa_id').html('<option value="">-- Memuat Siswa --</option>');
 
         $.ajax({
             url: '{{ route("admin.laporan.getSiswa") }}',
@@ -297,51 +281,33 @@ $(document).ready(function() {
             data: { tanggal: tanggal },
             success: function(data) {
                 $('#izin_loading').hide();
-                var listContainer = $('#izin-checkbox-list');
-                listContainer.empty();
+                var siswaDropdown = $('#izin_siswa_id');
+                siswaDropdown.empty().append('<option value="">-- Pilih Siswa --</option>');
 
                 if (data.length > 0) {
                     $.each(data, function(key, siswa) {
-                        var checkboxItem = `
-                            <div class="form-check siswa-item-izin">
-                                <input class="form-check-input" type="checkbox" name="siswa_ids[]" value="${siswa.id}" id="izin_siswa_${siswa.id}">
-                                <label class="form-check-label" for="izin_siswa_${siswa.id}">
-                                    ${siswa.nama_siswa} (${siswa.sekolah.nama_sekolah})
-                                </label>
-                            </div>`;
-                        listContainer.append(checkboxItem);
+                        siswaDropdown.append('<option value="' + siswa.id + '">' + siswa.nama_siswa + ' (' + siswa.sekolah.nama_sekolah + ')</option>');
                     });
+                    $('#izin_lanjutan').show();
+                    $('#izin_submit_button').prop('disabled', false);
                 } else {
-                    listContainer.html('<p class="text-muted text-center">Semua siswa sudah melakukan presensi atau tidak aktif pada tanggal ini.</p>');
+                    $('#izin_info').show().html('<p class="text-danger">Semua siswa sudah melakukan presensi atau tidak aktif pada tanggal ini.</p>');
                 }
             },
             error: function() {
                 $('#izin_loading').hide();
-                $('#izin-checkbox-list').html('<p class="text-danger text-center">Gagal memuat data siswa. Coba lagi.</p>');
+                $('#izin_info').show().html('<p class="text-danger">Gagal memuat data siswa. Coba lagi.</p>');
             }
         });
     }
 
-    $('#izin_tanggal').on('change', fetchAvailableStudentsForIzin);
+    // Panggil fungsi saat tanggal berubah
+    $('#izin_tanggal').on('change', fetchAvailableStudents);
+
+    // Panggil fungsi saat modal pertama kali dibuka
     $('#izinModal').on('shown.bs.modal', function () {
-        fetchAvailableStudentsForIzin();
-    });
-
-    $('#searchSiswaIzin').on('keyup', function() {
-        var value = $(this).val().toLowerCase();
-        $('#izin-checkbox-list .siswa-item-izin').filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-        });
-    });
-
-    // --- SCRIPT UNTUK MODAL PRESENSI MANUAL ---
-    $('#searchSiswa').on('keyup', function() {
-        var value = $(this).val().toLowerCase();
-        $('#siswa-checkbox-list .siswa-item').filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-        });
+        fetchAvailableStudents();
     });
 });
 </script>
 @stop
-

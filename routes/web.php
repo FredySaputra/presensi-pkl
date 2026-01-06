@@ -67,5 +67,4 @@ Route::prefix('admin')->name('admin.')->group(function() {
     Route::resource('presensi', AdminPresensiController::class)->only(['edit', 'update']);
 });
 
-// Load rute autentikasi bawaan Laravel (jika Anda menggunakan Laravel Breeze/Fortify)
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
