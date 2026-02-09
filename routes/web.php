@@ -31,6 +31,11 @@ Route::get('/presensi/data', [PresensiController::class, 'getAttendanceData'])->
 Route::get('/presensi/siswa-by-sekolah/{sekolah}', [PresensiController::class, 'getSiswaBySekolah']);
 
 
+Route::get('/dashboard', function () {
+    return redirect()->route('admin.dashboard'); 
+})->middleware(['auth', 'verified']);
+
+
 // --- ADMIN PANEL (MANAJEMEN & LAPORAN) ---
 Route::prefix('admin')->name('admin.')->group(function() {
     

@@ -26,13 +26,15 @@ class DashboardController extends Controller
         $jumlahIzin = Presensi::whereDate('tanggal', $today)
                               ->where('status', 'Izin')
                               ->count();
-
-        // 4. Menghitung jumlah yang alpa (total siswa aktif - (hadir + izin))
-        $jumlahAlpa = $totalSiswaAktif - ($jumlahHadir + $jumlahIzin);
+        
+        // 4. Menghitung jumlah yang alpa
+        // Logika: Total Siswa Aktif - (Hadir + Izin)
+        // Pastikan tidak negatif jika ada inkonsistensi data
+        $jumlahAlpa = max(0, $totalSiswaAktif - ($jumlahHadir + $jumlahIzin));
 
         // 5. Mengambil daftar siswa yang terlambat hari ini
         $batasMasuk = Carbon::createFromTimeString('09:00:59');
-        $siswaTerlambat = Presensi::with('siswa.sekolah')
+        $siswaTerlambat = Presensi::with(['siswa.sekolah'])
                                   ->whereDate('tanggal', $today)
                                   ->where('status', 'Hadir')
                                   ->whereTime('jam_masuk', '>', $batasMasuk)

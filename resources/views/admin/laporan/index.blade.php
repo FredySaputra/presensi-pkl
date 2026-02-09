@@ -7,13 +7,29 @@
 @stop
 
 @section('content')
-    {{-- Notifikasi --}}
+    {{-- Notifikasi Sukses --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
     @endif
+    
+    {{-- Notifikasi Error List (Jika ada siswa yang gagal izin WA) --}}
+    @if(session('error_list'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <h5><i class="icon fas fa-exclamation-triangle"></i> Perhatian!</h5>
+            Beberapa data tidak tersimpan karena aturan batas izin WA:
+            <ul>
+                @foreach(session('error_list') as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+    @endif
+
+    {{-- Notifikasi Error Biasa --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -28,19 +44,19 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label for="tanggal_mulai">Tanggal Mulai</label>
+                            <label>Tanggal Mulai</label>
                             <input type="date" name="tanggal_mulai" class="form-control" value="{{ $tanggalMulai }}">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label for="tanggal_selesai">Tanggal Selesai</label>
+                            <label>Tanggal Selesai</label>
                             <input type="date" name="tanggal_selesai" class="form-control" value="{{ $tanggalSelesai }}">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label for="sekolah_id">Filter Sekolah</label>
+                            <label>Filter Sekolah</label>
                             <select name="sekolah_id" class="form-control">
                                 <option value="">Semua Sekolah</option>
                                 @foreach($sekolahs as $sekolah)
@@ -51,7 +67,7 @@
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label for="search">Cari Nama Siswa</label>
+                            <label>Cari Nama</label>
                             <input type="text" name="search" class="form-control" placeholder="Cari nama..." value="{{ $search }}">
                         </div>
                     </div>
@@ -64,6 +80,7 @@
                     </div>
                 </div>
             </form>
+            {{-- Form tersembunyi untuk tombol cetak --}}
             <form id="cetakPdfForm" action="{{ route('admin.laporan.cetak_pdf') }}" method="POST" target="_blank" class="d-none">
                 @csrf
                 <input type="hidden" name="tanggal_mulai" value="{{ $tanggalMulai }}">
@@ -85,10 +102,10 @@
             <h3 class="card-title">Data Presensi</h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#izinModal">
-                    <i class="fas fa-user-check"></i> Catat Izin
+                    <i class="fas fa-user-check"></i> Catat Izin Massal
                 </button>
                 <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#manualModal">
-                    <i class="fas fa-edit"></i> Presensi Manual
+                    <i class="fas fa-edit"></i> Presensi Manual Massal
                 </button>
             </div>
         </div>
@@ -123,34 +140,15 @@
                                     <span class="badge badge-secondary">{{ $presensi->status }}</span>
                                 @endif
                             </td>
-                            <td>{{ $presensi->jam_masuk ? \Carbon\Carbon::parse($presensi->jam_masuk)->format('H:i:s') : '-' }}</td>
-                            <td>{{ $presensi->jam_pulang ? \Carbon\Carbon::parse($presensi->jam_pulang)->format('H:i:s') : '-' }}</td>
+                            <td>{{ $presensi->jam_masuk ? \Carbon\Carbon::parse($presensi->jam_masuk)->format('H:i') : '-' }}</td>
+                            <td>{{ $presensi->jam_pulang ? \Carbon\Carbon::parse($presensi->jam_pulang)->format('H:i') : '-' }}</td>
                             <td>
-                                @php
-                                    $keterangan = $presensi->keterangan;
-                                    if ($presensi->status == 'Hadir' || $presensi->status == 'Kurang') {
-                                        if ($presensi->jam_masuk) {
-                                            $jamMasuk = \Carbon\Carbon::parse($presensi->jam_masuk);
-                                            $batasMasuk = \Carbon\Carbon::parse($presensi->tanggal . ' 09:00:00');
-                                            if ($jamMasuk->gt($batasMasuk)) {
-                                                $keterangan = 'Telat ' . $jamMasuk->diffForHumans($batasMasuk, ['parts' => 2, 'short' => true]);
-                                            } else {
-                                                $keterangan = 'Tepat Waktu';
-                                            }
-                                        }
-
-                                        if ($presensi->jam_pulang) {
-                                            $jamPulang = \Carbon\Carbon::parse($presensi->jam_pulang);
-                                            $batasPulang = \Carbon\Carbon::parse($presensi->tanggal . ' 15:00:00');
-                                            if ($jamPulang->lt($batasPulang)) {
-                                                $keterangan .= ' | Pulang Awal ' . $jamPulang->diffForHumans($batasPulang, ['parts' => 2, 'short' => true]);
-                                            }
-                                        }
-                                    }
-                                @endphp
-                                {{ $keterangan }}
+                                {{ $presensi->keterangan }}
+                                @if($presensi->status == 'Izin' && $presensi->metode_izin)
+                                    <br><small class="text-muted">Via: {{ $presensi->metode_izin }}</small>
+                                @endif
                             </td>
-                             <td>
+                            <td>
                                 <a href="{{ route('admin.presensi.edit', $presensi->id) }}" class="btn btn-xs btn-warning">Edit</a>
                             </td>
                         </tr>
@@ -167,94 +165,93 @@
         </div>
     </div>
 
-    <!-- Modal Catat Izin -->
-    <div class="modal fade" id="izinModal" tabindex="-1" role="dialog" aria-labelledby="izinModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+    <!-- Modal Catat Izin (Update Fitur WA/Surat) -->
+    <div class="modal fade" id="izinModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="izinModalLabel">Catat Izin Siswa</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <h5 class="modal-title">Catat Izin Siswa Massal</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <form action="{{ route('admin.laporan.izin') }}" method="POST">
                     @csrf
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label for="izin_tanggal">Pilih Tanggal Izin</label>
-                            <input type="date" id="izin_tanggal" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Tanggal Izin</label>
+                                    <input type="date" id="izin_tanggal" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Keterangan</label>
+                                    <input type="text" name="keterangan" class="form-control" placeholder="Contoh: Sakit" required>
+                                </div>
+                            </div>
                         </div>
+                        
+                        {{-- Pilihan Metode Izin --}}
+                        <div class="form-group bg-light p-2 border rounded">
+                            <label class="d-block">Metode Izin:</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="metode_izin" id="metode_wa" value="WA" checked>
+                                <label class="form-check-label" for="metode_wa">WhatsApp (Maksimal 3x/Bulan)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="metode_izin" id="metode_surat" value="Surat">
+                                <label class="form-check-label" for="metode_surat">Surat Fisik (Tanpa Limit)</label>
+                            </div>
+                        </div>
+
                         <hr>
-                        <div id="izin_lanjutan" style="display: none;">
-                            <div class="form-group">
-                                <label for="izin_siswa_id">Pilih Siswa (Hanya yang belum presensi)</label>
-                                <select id="izin_siswa_id" name="siswa_id" class="form-control" required>
-                                    <option value="">-- Memuat Siswa --</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="izin_keterangan">Keterangan Izin</label>
-                                <textarea id="izin_keterangan" name="keterangan" class="form-control" rows="3" required></textarea>
-                            </div>
-                        </div>
-                         <div id="izin_loading" class="text-center" style="display: none;">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">Loading...</span>
-                            </div>
-                            <p>Mencari siswa yang tersedia...</p>
-                        </div>
-                        <div id="izin_info" class="text-center">
-                            <p class="text-muted">Pilih tanggal untuk melihat siswa yang bisa diizinkan.</p>
+                        <label>Pilih Siswa (Hanya yang belum presensi):</label>
+                        <input type="text" id="searchIzin" class="form-control mb-2" placeholder="Cari nama siswa...">
+                        <div id="loadingIzin" class="text-center d-none"><div class="spinner-border spinner-border-sm"></div> Memuat...</div>
+                        <div id="izin-list" style="height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
+                            {{-- Diisi AJAX --}}
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" id="izin_submit_button" class="btn btn-primary" disabled>Simpan</button>
+                        <button type="submit" class="btn btn-primary">Simpan Izin</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    
-    {{-- Modal Presensi Manual --}}
-    <div class="modal fade" id="manualModal" tabindex="-1" role="dialog" aria-labelledby="manualModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+    <!-- Modal Presensi Manual Massal -->
+    <div class="modal fade" id="manualModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="manualModalLabel">Input Presensi Manual</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <h5 class="modal-title">Presensi Manual (Checkbox)</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <form action="{{ route('admin.laporan.manual') }}" method="POST">
                     @csrf
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label for="siswa_id_manual">Pilih Siswa</label>
-                            <select name="siswa_id" id="siswa_id_manual" class="form-control" required>
-                                <option value="">-- Pilih Siswa --</option>
-                                @foreach($semuaSiswa as $siswa)
-                                    <option value="{{ $siswa->id }}">{{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})</option>
-                                @endforeach
-                            </select>
+                        <div class="row mb-3">
+                            <div class="col-md-4"><label>Tanggal</label><input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required></div>
+                            <div class="col-md-4"><label>Jam Masuk</label><input type="time" name="jam_masuk" class="form-control" value="08:00"></div>
+                            <div class="col-md-4"><label>Jam Pulang</label><input type="time" name="jam_pulang" class="form-control" value="16:00"></div>
                         </div>
-                        <div class="form-group">
-                            <label for="tanggal">Tanggal</label>
-                            <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="jam_masuk">Jam Masuk</label>
-                            <input type="time" name="jam_masuk" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="jam_pulang">Jam Pulang (Opsional)</label>
-                            <input type="time" name="jam_pulang" class="form-control">
+                        <hr>
+                        <label>Pilih Siswa:</label>
+                        <input type="text" id="searchManual" class="form-control mb-2" placeholder="Cari nama siswa...">
+                        <div id="manual-list" style="height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
+                            @foreach($semuaSiswa as $siswa)
+                                <div class="form-check item-manual">
+                                    <input class="form-check-input" type="checkbox" name="siswa_ids[]" value="{{ $siswa->id }}" id="m_{{ $siswa->id }}">
+                                    <label class="form-check-label" for="m_{{ $siswa->id }}">
+                                        {{ $siswa->nama_siswa }} ({{ $siswa->sekolah->nama_sekolah }})
+                                    </label>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <button type="submit" class="btn btn-success">Simpan Presensi</button>
                     </div>
                 </form>
             </div>
@@ -265,48 +262,78 @@
 @section('js')
 <script>
 $(document).ready(function() {
-    function fetchAvailableStudents() {
-        var tanggal = $('#izin_tanggal').val();
-        if (!tanggal) return;
+    // FUNGSI AJAX UNTUK MODAL IZIN
+    function fetchIzinStudents() {
+        let tgl = $('#izin_tanggal').val();
+        $('#loadingIzin').removeClass('d-none');
+        $('#izin-list').empty();
 
-        $('#izin_lanjutan').hide();
-        $('#izin_info').hide();
-        $('#izin_loading').show();
-        $('#izin_submit_button').prop('disabled', true);
-        $('#izin_siswa_id').html('<option value="">-- Memuat Siswa --</option>');
+        $.get('{{ route("admin.laporan.getSiswa") }}', { tanggal: tgl }, function(data) {
+            $('#loadingIzin').addClass('d-none');
+            if(data.length > 0) {
+                data.forEach(s => {
+                    // Logic Badge Limit
+                    let badge = '';
+                    if (s.jumlah_izin_wa >= 3) {
+                        badge = `<span class="badge badge-danger ml-2">Limit WA Habis (${s.jumlah_izin_wa}/3)</span>`;
+                    } else {
+                        badge = `<span class="badge badge-success ml-2">WA: ${s.jumlah_izin_wa}/3</span>`;
+                    }
 
-        $.ajax({
-            url: '{{ route("admin.laporan.getSiswa") }}',
-            type: 'GET',
-            data: { tanggal: tanggal },
-            success: function(data) {
-                $('#izin_loading').hide();
-                var siswaDropdown = $('#izin_siswa_id');
-                siswaDropdown.empty().append('<option value="">-- Pilih Siswa --</option>');
-
-                if (data.length > 0) {
-                    $.each(data, function(key, siswa) {
-                        siswaDropdown.append('<option value="' + siswa.id + '">' + siswa.nama_siswa + ' (' + siswa.sekolah.nama_sekolah + ')</option>');
-                    });
-                    $('#izin_lanjutan').show();
-                    $('#izin_submit_button').prop('disabled', false);
-                } else {
-                    $('#izin_info').show().html('<p class="text-danger">Semua siswa sudah melakukan presensi atau tidak aktif pada tanggal ini.</p>');
-                }
-            },
-            error: function() {
-                $('#izin_loading').hide();
-                $('#izin_info').show().html('<p class="text-danger">Gagal memuat data siswa. Coba lagi.</p>');
+                    $('#izin-list').append(`
+                        <div class="form-check item-izin border-bottom py-2">
+                            <input class="form-check-input" type="checkbox" name="siswa_ids[]" value="${s.id}" id="i_${s.id}">
+                            <label class="form-check-label w-100" for="i_${s.id}">
+                                ${s.nama_siswa} <br>
+                                <small class="text-muted">${s.sekolah.nama_sekolah}</small>
+                                ${badge}
+                            </label>
+                        </div>
+                    `);
+                });
+            } else {
+                $('#izin-list').html('<p class="text-muted text-center pt-3">Tidak ada siswa yang bisa diizinkan tanggal ini.</p>');
             }
         });
     }
 
-    // Panggil fungsi saat tanggal berubah
-    $('#izin_tanggal').on('change', fetchAvailableStudents);
+    $('#izin_tanggal').on('change', fetchIzinStudents);
+    $('#izinModal').on('shown.bs.modal', fetchIzinStudents);
 
-    // Panggil fungsi saat modal pertama kali dibuka
-    $('#izinModal').on('shown.bs.modal', function () {
-        fetchAvailableStudents();
+    // SEARCH FILTER
+    $('#searchIzin').on('keyup', function() {
+        let val = $(this).val().toLowerCase();
+        $('.item-izin').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
+        });
+    });
+
+    $('#searchManual').on('keyup', function() {
+        let val = $(this).val().toLowerCase();
+        $('.item-manual').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
+        });
+    });
+
+    // Validasi Client-Side sebelum submit Izin
+    $('form[action="{{ route("admin.laporan.izin") }}"]').on('submit', function(e) {
+        let metode = $('input[name="metode_izin"]:checked').val();
+        if (metode === 'WA') {
+            let errorFound = false;
+            // Cek setiap checkbox yang dipilih
+            $('#izin-list input:checked').each(function() {
+                let labelText = $(this).next('label').text();
+                if (labelText.includes('Limit WA Habis')) {
+                    errorFound = true;
+                    return false; // break loop
+                }
+            });
+
+            if (errorFound) {
+                e.preventDefault();
+                alert('Gagal! Ada siswa terpilih yang sudah habis limit izin WA (3x). Silakan ganti metode ke "Surat Fisik" atau hapus centang pada siswa tersebut.');
+            }
+        }
     });
 });
 </script>

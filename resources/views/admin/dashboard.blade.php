@@ -13,7 +13,8 @@
             {{-- Kartu Total Siswa Aktif --}}
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>{{ $totalSiswaAktif }}</h3>
+                    {{-- Pastikan variabel ini ada --}}
+                    <h3>{{ $totalSiswaAktif ?? 0 }}</h3>
                     <p>Total Siswa PKL Aktif</p>
                 </div>
                 <div class="icon">
@@ -28,7 +29,7 @@
             {{-- Kartu Jumlah Hadir --}}
             <div class="small-box bg-success">
                 <div class="inner">
-                    <h3>{{ $jumlahHadir }}</h3>
+                    <h3>{{ $jumlahHadir ?? 0 }}</h3>
                     <p>Hadir Hari Ini</p>
                 </div>
                 <div class="icon">
@@ -43,7 +44,7 @@
             {{-- Kartu Jumlah Izin --}}
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ $jumlahIzin }}</h3>
+                    <h3>{{ $jumlahIzin ?? 0 }}</h3>
                     <p>Izin Hari Ini</p>
                 </div>
                 <div class="icon">
@@ -58,7 +59,7 @@
             {{-- Kartu Jumlah Alpa --}}
             <div class="small-box bg-danger">
                 <div class="inner">
-                    <h3>{{ $jumlahAlpa }}</h3>
+                    <h3>{{ $jumlahAlpa ?? 0 }}</h3>
                     <p>Alpa Hari Ini</p>
                 </div>
                 <div class="icon">
@@ -89,15 +90,15 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($siswaTerlambat as $presensi)
+                            @forelse($siswaTerlambat ?? [] as $presensi)
                                 @php
                                     $jamMasuk = \Carbon\Carbon::parse($presensi->jam_masuk);
                                     $batasMasuk = \Carbon\Carbon::createFromTimeString('09:00:59');
                                     $keterlambatan = $jamMasuk->diffForHumans($batasMasuk, true);
                                 @endphp
                                 <tr>
-                                    <td>{{ $presensi->siswa->nama_siswa }}</td>
-                                    <td>{{ $presensi->siswa->sekolah->nama_sekolah }}</td>
+                                    <td>{{ $presensi->siswa->nama_siswa ?? '-' }}</td>
+                                    <td>{{ $presensi->siswa->sekolah->nama_sekolah ?? '-' }}</td>
                                     <td><span class="badge badge-danger">{{ $jamMasuk->format('H:i:s') }}</span></td>
                                     <td>{{ $keterlambatan }}</td>
                                 </tr>

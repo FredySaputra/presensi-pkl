@@ -17,6 +17,7 @@ class Presensi extends Model
         'jam_pulang',
         'status',
         'keterangan',
+        'metode_izin'
     ];
 
     public function siswa(): BelongsTo
