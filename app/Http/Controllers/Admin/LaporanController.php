@@ -24,6 +24,7 @@ class LaporanController extends Controller
         $sekolahId = $request->input('sekolah_id');
         $search = $request->input('search');
 
+        // Query Presensi (Untuk tabel laporan)
         $presensis = Presensi::with(['siswa.sekolah'])
             ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai])
             ->when($sekolahId, function ($query, $sekolahId) {
@@ -41,7 +42,17 @@ class LaporanController extends Controller
             ->paginate(15);
 
         $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
-        $semuaSiswa = Siswa::with('sekolah')->orderBy('nama_siswa', 'asc')->get();
+
+        // PERBAIKAN DISINI: Filter $semuaSiswa
+        // Hanya ambil siswa yang masa PKL-nya "aktif" atau "beririsan" dengan rentang tanggal yang dipilih
+        // Logika: 
+        // 1. Siswa mulai PKL sebelum (atau pas) tanggal akhir filter.
+        // 2. DAN Siswa selesai PKL setelah (atau pas) tanggal mulai filter.
+        $semuaSiswa = Siswa::with('sekolah')
+            ->where('mulai_pkl', '<=', $tanggalSelesai) 
+            ->where('selesai_pkl', '>=', $tanggalMulai)
+            ->orderBy('nama_siswa', 'asc')
+            ->get();
 
         return view('admin.laporan.index', compact('presensis', 'sekolahs', 'semuaSiswa', 'tanggalMulai', 'tanggalSelesai', 'sekolahId', 'search'));
     }
@@ -70,8 +81,8 @@ class LaporanController extends Controller
             ->map(function ($siswa) use ($bulanIni, $tahunIni) {
                 // Hitung jumlah izin WA bulan ini
                 $jumlahIzinWA = Presensi::where('siswa_id', $siswa->id)
-                    ->whereMonth('tanggal', $bulanIni)
-                    ->whereYear('tanggal', $tahunIni)
+                    // ->whereMonth('tanggal', $bulanIni)
+                    // ->whereYear('tanggal', $tahunIni)
                     ->where('status', 'Izin')
                     ->where('metode_izin', 'WA')
                     ->count();
@@ -104,8 +115,8 @@ class LaporanController extends Controller
             // Cek batasan izin WA
             if ($request->metode_izin == 'WA') {
                 $jumlahIzinWA = Presensi::where('siswa_id', $siswaId)
-                    ->whereMonth('tanggal', $bulanIni)
-                    ->whereYear('tanggal', $tahunIni)
+                    // ->whereMonth('tanggal', $bulanIni)
+                    // ->whereYear('tanggal', $tahunIni)
                     ->where('status', 'Izin')
                     ->where('metode_izin', 'WA')
                     ->count();
@@ -151,6 +162,22 @@ class LaporanController extends Controller
             'jam_pulang'  => 'nullable|date_format:H:i|after_or_equal:jam_masuk',
         ]);
 
+        $tanggal = $request->input('tanggal');
+
+        // FILTER: Ambil hanya siswa yang ID-nya dikirim DAN statusnya masih aktif PKL pada tanggal tersebut
+        // Logika aktif: Tanggal input harus berada di antara mulai_pkl dan selesai_pkl
+        $validSiswaIds = Siswa::whereIn('id', $request->siswa_ids)
+            ->where('mulai_pkl', '<=', $tanggal)
+            ->where('selesai_pkl', '>=', $tanggal)
+            ->pluck('id')
+            ->toArray();
+
+        // Jika tidak ada siswa yang valid/aktif pada tanggal tersebut
+        if (empty($validSiswaIds)) {
+            return redirect()->route('admin.laporan.index')
+                ->with('error', 'Semua siswa yang dipilih tidak sedang dalam masa aktif PKL pada tanggal tersebut.');
+        }
+
         $status = 'Hadir';
         if ($request->jam_masuk && $request->jam_pulang) {
             $jamMasuk = Carbon::parse($request->jam_masuk);
@@ -161,7 +188,8 @@ class LaporanController extends Controller
             }
         }
 
-        foreach ($request->siswa_ids as $siswaId) {
+        // Loop hanya pada ID yang valid
+        foreach ($validSiswaIds as $siswaId) {
             Presensi::updateOrCreate(
                 ['siswa_id' => $siswaId, 'tanggal' => $request->tanggal],
                 [
@@ -173,7 +201,9 @@ class LaporanController extends Controller
             );
         }
 
-        return redirect()->route('admin.laporan.index')->with('success', 'Presensi manual berhasil disimpan.');
+        $jumlahTersimpan = count($validSiswaIds);
+        return redirect()->route('admin.laporan.index')
+            ->with('success', "Presensi manual berhasil disimpan untuk $jumlahTersimpan siswa yang aktif.");
     }
 
     /**
