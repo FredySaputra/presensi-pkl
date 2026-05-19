@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('siswas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sekolah_id')->constrained('sekolahs');
-            $table->string('id_kartu')->unique();
             $table->string('nama_siswa');
             $table->date('mulai_pkl');
             $table->date('selesai_pkl');

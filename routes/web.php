@@ -18,9 +18,6 @@ use App\Http\Controllers\Admin\PresensiController as AdminPresensiController;
 // Halaman utama tempat siswa melakukan scan atau pilih nama
 Route::get('/', [PresensiController::class, 'index'])->name('presensi.index');
 
-// Proses presensi masuk/pulang via RFID
-Route::post('/presensi/store', [PresensiController::class, 'store'])->name('presensi.store');
-
 // Proses presensi masuk/pulang via Pilih Nama (Manual)
 Route::post('/presensi/manual', [PresensiController::class, 'storeManual'])->name('presensi.manual');
 
@@ -31,45 +28,43 @@ Route::get('/presensi/data', [PresensiController::class, 'getAttendanceData'])->
 Route::get('/presensi/siswa-by-sekolah/{sekolah}', [PresensiController::class, 'getSiswaBySekolah']);
 
 
-Route::get('/dashboard', function () {
-    return redirect()->route('admin.dashboard'); 
-})->middleware(['auth', 'verified']);
+// Route::get('/dashboard', function () {
+//     return redirect()->route('admin.dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
 
 
-// --- ADMIN PANEL (MANAJEMEN & LAPORAN) ---
-Route::prefix('admin')->name('admin.')->group(function() {
-    
+
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(function() {
+
     // Dashboard: Statistik Kehadiran Hari Ini
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Manajemen Master Data Sekolah
     Route::resource('sekolah', SekolahController::class);
-    
+
     // Manajemen Data Siswa (Create, Edit, Delete)
     Route::resource('siswa', SiswaController::class);
-    
+
     // Fitur Tambahan Siswa: Arsip (PKL Selesai) & Riwayat Per Siswa
     Route::get('/siswa-arsip', [SiswaController::class, 'arsip'])->name('siswa.arsip');
     Route::get('/siswa/{siswa}/riwayat', [SiswaController::class, 'riwayat'])->name('siswa.riwayat');
 
     // Laporan Presensi & Fitur Massal (Admin)
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
-    
+
     // Mencatat Izin Massal (Checkbox)
     Route::post('/laporan/izin', [LaporanController::class, 'catatIzin'])->name('laporan.izin');
-    
+
     // Mencatat Presensi Manual Massal (Checkbox)
     Route::post('/laporan/manual', [LaporanController::class, 'storeManualPresence'])->name('laporan.manual');
-    
+
     // API untuk mendapatkan siswa yang belum hadir pada tanggal tertentu (untuk Modal Izin)
     Route::get('/laporan/get-siswa-tanpa-presensi', [LaporanController::class, 'getSiswaTanpaPresensi'])->name('laporan.getSiswa');
-    
+
     // Fitur Ekspor Laporan
     Route::post('/laporan/pdf', [LaporanController::class, 'cetakPdf'])->name('laporan.cetak_pdf');
     Route::post('/laporan/excel', [LaporanController::class, 'cetakExcel'])->name('laporan.cetak_excel');
 
-    // Fitur Edit Data Presensi Tertentu (Jika ada kesalahan input)
-    Route::resource('presensi', AdminPresensiController::class)->only(['edit', 'update']);
 });
 
 require __DIR__ . '/auth.php';

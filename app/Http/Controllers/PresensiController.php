@@ -15,34 +15,16 @@ class PresensiController extends Controller
      */
     public function index()
     {
-        // Mengambil data kehadiran hari ini
         $data = $this->getAttendanceDataLogic();
-        
-        // MENGAMBIL DATA SEKOLAH untuk dropdown modal manual
         $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
-        
-        return view('welcome', [
+
+        return view('presensi.index', [
             'daftarHadir' => $data['daftarHadir'],
             'sekolahs'    => $sekolahs
         ]);
     }
 
-    /**
-     * Memproses presensi melalui scan RFID (Otomatis).
-     */
-    public function store(Request $request)
-    {
-        $request->validate(['id_kartu' => 'required|string']);
-        
-        $idKartu = preg_replace('/\s+/', '', $request->id_kartu);
-        $siswa = Siswa::with('sekolah')->where('id_kartu', $idKartu)->first();
 
-        if (!$siswa) {
-            return response()->json(['message' => 'ID Kartu Tidak Terdaftar!', 'status_class' => 'danger'], 404);
-        }
-
-        return $this->processAttendanceLogic($siswa);
-    }
 
     /**
      * Memproses presensi manual (Pilih Nama dari Modal).
@@ -55,52 +37,60 @@ class PresensiController extends Controller
         return $this->processAttendanceLogic($siswa);
     }
 
-    /**
+   /**
      * Logika inti untuk pencatatan presensi (Masuk dan Pulang).
      */
     private function processAttendanceLogic($siswa)
     {
         $today = Carbon::today();
-        
+        $now = Carbon::now();
+
+        // Batas waktu presensi
+        $batasMasuk = $today->copy()->setTime(9, 0, 0);
+        $batasPulang = $today->copy()->setTime(15, 0, 0);
+
         // Memastikan masa PKL siswa masih aktif
         if (!$today->between(Carbon::parse($siswa->mulai_pkl), Carbon::parse($siswa->selesai_pkl))) {
             return response()->json(['message' => 'Masa PKL belum dimulai atau sudah berakhir.', 'student' => $siswa, 'status_class' => 'warning'], 400);
         }
 
-        $presensi = Presensi::where('siswa_id', $siswa->id)
-                            ->whereDate('tanggal', $today)
-                            ->first();
-        $now = Carbon::now();
+        // Kalkulasi Keterlambatan Masuk
+        $isTelat = $now->greaterThan($batasMasuk);
+        $menitTelat = $isTelat ? $batasMasuk->diffInMinutes($now) : null;
+        $statusMasuk = $isTelat ? 'Telat' : 'Hadir';
 
-        if ($presensi) {
-            // Update JAM PULANG
+        // Proses Presensi Masuk (Atau ambil data jika sudah ada)
+        $presensi = Presensi::firstOrCreate(
+            ['siswa_id' => $siswa->id, 'tanggal' => $today->toDateString()],
+            [
+                'jam_masuk' => $now->toTimeString(),
+                'status' => $statusMasuk,
+                'menit_telat' => $menitTelat
+            ]
+        );
+
+        if ($presensi->wasRecentlyCreated) {
+            // Respons untuk MASUK
+            $statusClass = $isTelat ? 'warning' : 'success';
+            $message = $isTelat ? "Presensi Berhasil. Anda Telat {$menitTelat} Menit!" : 'Presensi Masuk Berhasil. Selamat Datang!';
+        } else {
+            // Proses Presensi PULANG
             $presensi->jam_pulang = $now->toTimeString();
 
-            // Logika Status: Hadir jika durasi >= 5 jam (300 menit)
-            $jamMasuk = Carbon::parse($presensi->jam_masuk);
-            $durasiMenit = $now->diffInMinutes($jamMasuk);
-            
-            if ($durasiMenit >= 300) { 
-                $presensi->status = 'Hadir';
+            // Kalkulasi Pulang Cepat
+            if ($now->lessThan($batasPulang)) {
+                $menitCepat = $now->diffInMinutes($batasPulang);
+                $presensi->status = 'Pulang Cepat';
+                $presensi->menit_pulang_cepat = $menitCepat;
+
+                $message = "Jam Pulang Diperbarui! (Pulang Cepat {$menitCepat} Menit)";
+                $statusClass = 'warning';
+            } else {
                 $message = 'Jam Pulang Diperbarui! (Tepat Waktu)';
                 $statusClass = 'success';
-            } else {
-                $presensi->status = 'Kurang';
-                $message = 'Jam Kerja Kurang dari 5 Jam!';
-                $statusClass = 'warning';
             }
-            
+
             $presensi->save();
-        } else {
-            // Presensi MASUK
-            Presensi::create([
-                'siswa_id' => $siswa->id,
-                'tanggal' => $today->toDateString(),
-                'jam_masuk' => $now->toTimeString(),
-                'status' => 'Hadir', 
-            ]);
-            $message = 'Presensi Masuk Berhasil. Selamat Datang!';
-            $statusClass = 'success';
         }
 
         // Ambil data terbaru untuk dikirim kembali ke UI
@@ -115,45 +105,22 @@ class PresensiController extends Controller
     }
 
     /**
-     * Mengambil daftar siswa aktif per sekolah untuk dropdown manual.
-     */
-    public function getSiswaBySekolah(Sekolah $sekolah)
-    {
-        $today = Carbon::today()->toDateString();
-        $siswas = $sekolah->siswas()
-            ->where('mulai_pkl', '<=', $today)
-            ->where('selesai_pkl', '>=', $today)
-            ->orderBy('nama_siswa', 'asc')
-            ->get(['id', 'nama_siswa']);
-            
-        return response()->json($siswas);
-    }
-
-    /**
-     * API untuk memuat ulang daftar hadir secara real-time via AJAX.
-     */
-    public function getAttendanceData()
-    {
-        $data = $this->getAttendanceDataLogic();
-        return response()->json($data['daftarHadir']);
-    }
-
-    /**
      * Fungsi helper untuk mengelompokkan data presensi hari ini berdasarkan sekolah.
      */
     private function getAttendanceDataLogic()
     {
         $today = Carbon::today();
-        
+
+        // PROBLEM 4 FIX: Pindahkan filter tanggal ke SQL (whereHas) agar lebih cepat dan hemat RAM
         $presensisData = Presensi::with(['siswa.sekolah'])
             ->whereDate('tanggal', $today)
             ->whereNotNull('jam_masuk')
+            ->whereHas('siswa', function($query) use ($today) {
+                $query->where('mulai_pkl', '<=', $today->toDateString())
+                      ->where('selesai_pkl', '>=', $today->toDateString());
+            })
             ->orderBy('updated_at', 'desc')
-            ->get()
-            ->filter(function($p) use ($today) {
-                // Hanya tampilkan siswa yang masa PKL-nya aktif hari ini
-                return $p->siswa && $today->between(Carbon::parse($p->siswa->mulai_pkl), Carbon::parse($p->siswa->selesai_pkl));
-            });
+            ->get();
 
         $daftarHadir = [];
         foreach ($presensisData as $p) {
@@ -169,4 +136,30 @@ class PresensiController extends Controller
 
         return ['daftarHadir' => $daftarHadir];
     }
+
+    /**
+     * Mengambil daftar siswa aktif per sekolah untuk dropdown manual.
+     */
+    public function getSiswaBySekolah(Sekolah $sekolah)
+    {
+        $today = Carbon::today()->toDateString();
+        $siswas = $sekolah->siswas()
+            ->where('mulai_pkl', '<=', $today)
+            ->where('selesai_pkl', '>=', $today)
+            ->orderBy('nama_siswa', 'asc')
+            ->get(['id', 'nama_siswa']);
+
+        return response()->json($siswas);
+    }
+
+    /**
+     * API untuk memuat ulang daftar hadir secara real-time via AJAX.
+     */
+    public function getAttendanceData()
+    {
+        $data = $this->getAttendanceDataLogic();
+        return response()->json($data['daftarHadir']);
+    }
+
+
 }

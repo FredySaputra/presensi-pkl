@@ -11,10 +11,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Siswa extends Model
 {
-    use HasFactory, SoftDeletes; 
+    use HasFactory, SoftDeletes;
     protected $fillable = [
         'sekolah_id',
-        'id_kartu',
         'nama_siswa',
         'mulai_pkl',
         'selesai_pkl',
@@ -22,7 +21,7 @@ class Siswa extends Model
 
     protected function setNamaSiswaAttribute($value)
     {
-     
+
         $this->attributes['nama_siswa'] = Str::upper($value);
     }
 
@@ -31,7 +30,7 @@ class Siswa extends Model
         return $this->belongsTo(Sekolah::class);
     }
 
-    
+
     public function presensis(): HasMany
     {
         return $this->hasMany(Presensi::class);
