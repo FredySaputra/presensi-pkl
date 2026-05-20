@@ -13,8 +13,8 @@
             <h4><strong>{{ $siswa->nama_siswa }}</strong></h4>
             <p class="mb-0"><strong>Asal Sekolah:</strong> {{ $siswa->sekolah->nama_sekolah }}</p>
             <p><strong>Periode PKL:</strong> {{ \Carbon\Carbon::parse($siswa->mulai_pkl)->isoFormat('D MMM Y') }} s/d {{ \Carbon\Carbon::parse($siswa->selesai_pkl)->isoFormat('D MMM Y') }}</p>
-            <a href="{{ route('admin.siswa.index') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Kembali ke Daftar Siswa
+            <a onclick="history.back()" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
     </div>

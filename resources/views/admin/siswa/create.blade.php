@@ -43,14 +43,12 @@
 
                 <hr>
                 <h5 class="mb-3">Daftar Siswa</h5>
-                <p class="text-muted small">* Klik pada kolom ID Kartu lalu tempelkan kartu ke RFID Reader.</p>
 
                 <table class="table table-bordered" id="studentTable">
                     <thead>
                         <tr class="bg-light">
                             <th>Nama Siswa</th>
-                            <th style="width: 300px;">ID Kartu (RFID)</th>
-                            <th style="width: 50px;">Aksi</th>
+                            <th style="width: 80px;" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -58,16 +56,13 @@
                             <td>
                                 <input type="text" name="students[0][nama_siswa]" class="form-control" placeholder="Nama Lengkap" required>
                             </td>
-                            <td>
-                                <input type="text" name="students[0][id_kartu]" class="form-control id-kartu-input" placeholder="Scan Kartu..." >
-                            </td>
-                            <td>
+                            <td class="text-center">
                                 <button type="button" class="btn btn-danger btn-sm remove-row" disabled><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
-                
+
                 <button type="button" class="btn btn-info mt-2" id="addRow">
                     <i class="fas fa-plus"></i> Tambah Baris Siswa
                 </button>
@@ -93,15 +88,12 @@ $(document).ready(function() {
                 <td>
                     <input type="text" name="students[${rowCount}][nama_siswa]" class="form-control" placeholder="Nama Lengkap" required>
                 </td>
-                <td>
-                    <input type="text" name="students[${rowCount}][id_kartu]" class="form-control id-kartu-input" placeholder="Scan Kartu..." >
-                </td>
-                <td>
+                <td class="text-center">
                     <button type="button" class="btn btn-danger btn-sm remove-row"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
         $('#studentTable tbody').append(newRow);
-        
+
         // Aktifkan tombol hapus jika baris > 1
         $('.remove-row').prop('disabled', false);
         rowCount++;
@@ -112,26 +104,6 @@ $(document).ready(function() {
         $(this).closest('tr').remove();
         if ($('#studentTable tbody tr').length <= 1) {
             $('.remove-row').prop('disabled', true);
-        }
-    });
-
-    /**
-     * Logika Pindah Fokus Otomatis
-     * Saat RFID mendeteksi kartu, biasanya ia mengirimkan input + ENTER.
-     * Kita tangkap event ini agar setelah scan kartu, kursor otomatis pindah ke
-     * Nama Siswa di baris baru (jika ada) atau menambah baris baru.
-     */
-    $(document).on('keypress', '.id-kartu-input', function(e) {
-        if (e.which == 13) { // Tombol Enter (dari RFID Reader)
-            e.preventDefault();
-            // Jika ini baris terakhir, klik tambah baris otomatis
-            let isLastRow = $(this).closest('tr').is(':last-child');
-            if (isLastRow) {
-                $('#addRow').click();
-            }
-            
-            // Fokus ke input nama di baris berikutnya
-            $(this).closest('tr').next().find('input[name*="[nama_siswa]"]').focus();
         }
     });
 });

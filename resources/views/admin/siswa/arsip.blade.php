@@ -24,7 +24,7 @@
                 </div>
                 <div class="form-group mb-2 ml-3">
                     <label for="search" class="mr-2">Cari:</label>
-                    <input type="text" name="search" class="form-control" placeholder="Nama Siswa / ID Kartu" value="{{ $search ?? '' }}">
+                    <input type="text" name="search" class="form-control" placeholder="Nama Siswa..." value="{{ $search ?? '' }}">
                 </div>
                 <button type="submit" class="btn btn-primary mb-2 ml-2">Filter</button>
             </form>
@@ -60,7 +60,12 @@
                             <td>{{ $siswa->sekolah->nama_sekolah ?? 'Sekolah Dihapus' }}</td>
                             <td>{{ \Carbon\Carbon::parse($siswa->selesai_pkl)->isoFormat('D MMMM Y') }}</td>
                             <td>
-                                <a href="{{ route('admin.siswa.riwayat', $siswa->id) }}" class="btn btn-info btn-xs">Riwayat</a>
+                                <a href="{{ route('admin.siswa.riwayat', $siswa->id) }}" class="btn btn-info btn-xs">
+                                    <i class="fas fa-history"></i> Riwayat
+                                </a>
+                                <a href="{{ route('admin.siswa.edit', $siswa->id) }}" class="btn btn-warning btn-xs">
+                                    <i class="fas fa-edit"></i> Edit / Perpanjang PKL
+                                </a>
                             </td>
                         </tr>
                     @empty

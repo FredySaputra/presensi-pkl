@@ -33,7 +33,7 @@
                 </div>
                 <div class="form-group mb-2 ml-3">
                     <label for="search" class="mr-2">Cari:</label>
-                    <input type="text" name="search" class="form-control" placeholder="Nama Siswa / ID Kartu" value="{{ $search ?? '' }}">
+                    <input type="text" name="search" class="form-control" placeholder="Nama Siswa..." value="{{ $search ?? '' }}">
                 </div>
                 <button type="submit" class="btn btn-primary mb-2 ml-2">Filter</button>
             </form>
@@ -58,10 +58,9 @@
             <table class="table table-bordered table-striped">
                 <thead>
                     <tr>
-                        <th style="width: 10px">#</th>
+                        <th style="width: 10px">No.</th>
                         <th>Nama Siswa</th>
                         <th>Asal Sekolah</th>
-                        <th>ID Kartu RFID</th>
                         <th>Masa PKL</th>
                         <th style="width: 200px">Aksi</th>
                     </tr>
@@ -72,15 +71,16 @@
                             <td>{{ ($siswas->currentPage() - 1) * $siswas->perPage() + $loop->iteration }}</td>
                             <td>{{ $siswa->nama_siswa }}</td>
                             <td>{{ $siswa->sekolah->nama_sekolah ?? 'Sekolah Dihapus' }}</td>
-                            <td>{{ $siswa->id_kartu }}</td>
                             <td>{{ \Carbon\Carbon::parse($siswa->mulai_pkl)->format('d M Y') }} - {{ \Carbon\Carbon::parse($siswa->selesai_pkl)->format('d M Y') }}</td>
                             <td>
                                 <a href="{{ route('admin.siswa.riwayat', $siswa->id) }}" class="btn btn-info btn-xs">Riwayat</a>
                                 <a href="{{ route('admin.siswa.edit', $siswa->id) }}" class="btn btn-warning btn-xs">Edit</a>
-                                <form action="{{ route('admin.siswa.destroy', $siswa->id) }}" method="POST" class="d-inline">
+                                <form action="{{ route('admin.siswa.destroy', $siswa->id) }}" method="POST" class="d-inline form-delete-siswa">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-xs delete-button">Hapus</button>
+                                    <button type="submit" class="btn btn-danger btn-xs">
+                                        <i class="fas fa-trash"></i> Hapus
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -101,4 +101,35 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const deleteForms = document.querySelectorAll('.form-delete-siswa');
+
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                Swal.fire({
+                    title: 'Hapus Data Siswa?',
+                    text: "Tindakan ini akan menghapus data siswa beserta seluruh riwayat presensinya secara permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+    });
+</script>
 @stop

@@ -38,12 +38,6 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="id_kartu">ID Kartu RFID</label>
-                    <input type="text" name="id_kartu" class="form-control @error('id_kartu') is-invalid @enderror" value="{{ old('id_kartu', $siswa->id_kartu) }}" required>
-                     @error('id_kartu')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
