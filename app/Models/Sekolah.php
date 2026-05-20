@@ -10,19 +10,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Sekolah extends Model
 {
-    use HasFactory, SoftDeletes; 
+    use HasFactory, SoftDeletes;
 
-    protected $fillable = [
-        'nama_sekolah',
-        'hari_libur',
-    ];
+    protected $fillable = ['nama_sekolah', 'alamat', 'latitude', 'longitude'];
 
      protected function setNamaSekolahAttribute($value)
     {
-     
+
         $this->attributes['nama_sekolah'] = Str::upper($value);
     }
-    
+
     public function siswas(): HasMany
     {
         return $this->hasMany(Siswa::class);
