@@ -32,30 +32,36 @@
 
                 <div id="status" class="alert alert-light border status-message shadow-sm mt-3 mb-4">
                     <i class="fa-solid fa-hand-pointer fa-3x mb-2 text-primary"></i>
-                    <h4 class="fw-bold mb-0">Pilih Nama Untuk Presensi</h4>
+                    <h4 class="fw-bold mb-0">Pilih Nama Untuk Kehadiran</h4>
                 </div>
 
                 <div class="text-start bg-light p-4 rounded-4 border">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-muted">1. Asal Sekolah</label>
-                        <select id="sel_sekolah" class="form-select form-select-lg shadow-sm">
-                            <option value="">-- Pilih Sekolah --</option>
-                            @isset($sekolahs)
+                    @if($sekolahs->isEmpty())
+                        <div class="alert alert-success text-center mb-0 border-0 shadow-sm rounded-4 py-4">
+                            <i class="fa-solid fa-check-circle fa-3x mb-3 text-success"></i>
+                            <h4 class="fw-bold mb-0">Semua siswa telah presensi!</h4>
+                            <p class="text-muted mt-2">Tidak ada siswa tersisa untuk mencatat jam masuk.</p>
+                        </div>
+                    @else
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-muted">1. Asal Sekolah</label>
+                            <select id="sel_sekolah" class="form-select form-select-lg shadow-sm">
+                                <option value="">-- Pilih Sekolah --</option>
                                 @foreach($sekolahs as $s)
                                     <option value="{{ $s->id }}">{{ $s->nama_sekolah }}</option>
                                 @endforeach
-                            @endisset
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold text-muted">2. Nama Siswa</label>
-                        <select id="sel_siswa" class="form-select form-select-lg shadow-sm" disabled>
-                            <option value="">Pilih sekolah terlebih dahulu</option>
-                        </select>
-                    </div>
-                    <button id="btn_submit_manual" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px;">
-                        <i class="fas fa-check-circle me-2"></i> KONFIRMASI HADIR / PULANG
-                    </button>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold text-muted">2. Nama Siswa</label>
+                            <select id="sel_siswa" class="form-select form-select-lg shadow-sm" disabled>
+                                <option value="">Pilih sekolah terlebih dahulu</option>
+                            </select>
+                        </div>
+                        <button id="btn_submit_manual" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px;">
+                            <i class="fas fa-sign-in-alt me-2"></i> KONFIRMASI HADIR (MASUK)
+                        </button>
+                    @endif
                 </div>
 
                 <div id="student-info" class="mt-3" style="min-height: 80px;"></div>
@@ -73,11 +79,11 @@
         </div>
     </div>
 
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-        // Fungsi Waktu
         function updateTime() {
             const now = new Date();
             $('#clock').text(now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'}));
@@ -85,7 +91,16 @@
         }
         setInterval(updateTime, 1000); updateTime();
 
-        // Fungsi Render Tab
+        function formatWaktuMenit(totalMenit) {
+            if (!totalMenit || totalMenit <= 0) return '0 Menit';
+            let jam = Math.floor(totalMenit / 60);
+            let menit = totalMenit % 60;
+            let teks = [];
+            if (jam > 0) teks.push(jam + ' Jam');
+            if (menit > 0) teks.push(menit + ' Menit');
+            return teks.join(' ');
+        }
+
         function renderTabs(data, targetActiveId = null) {
             const tabs = $('#schoolTabs').empty();
             const content = $('#schoolTabsContent').empty();
@@ -109,18 +124,29 @@
                 let rows = data[id].siswa.map(p => {
                     let badgeClass = (p.status == 'Kurang' || p.status == 'Pulang Cepat' || p.status == 'Telat') ? 'bg-warning text-dark' : (p.jam_pulang ? 'bg-success' : 'bg-primary');
                     let timeText = p.jam_pulang ? 'Pulang ' + p.jam_pulang.substring(0, 5) : 'Hadir ' + p.jam_masuk.substring(0, 5);
+
                     if(p.status === 'Telat') {
-                        timeText = `Telat ${p.menit_telat} Menit | ${timeText}`;
+                        timeText = `Telat ${formatWaktuMenit(p.menit_telat)} | ${timeText}`;
                     } else if (p.status === 'Pulang Cepat') {
-                        timeText = `Cepat ${p.menit_pulang_cepat} Menit | ${timeText}`;
+                        timeText = `Cepat ${formatWaktuMenit(p.menit_pulang_cepat)} | ${timeText}`;
                     } else if(p.status === 'Kurang') {
                         timeText = `Kurang | ${timeText}`;
                     }
 
+                    let actionBtn = '';
+                    if (!p.jam_pulang) {
+                        actionBtn = `<button class="btn btn-sm btn-outline-danger me-2 fw-bold btn-pulang" data-id="${p.siswa_id}"><i class="fas fa-sign-out-alt"></i> Pulang</button>`;
+                    } else {
+                        actionBtn = `<button class="btn btn-sm btn-outline-warning me-2 fw-bold btn-edit-pulang" data-id="${p.id}"><i class="fas fa-sync-alt"></i> Update Pulang</button>`;
+                    }
+
                     return `
-                    <li class="list-group-item d-flex justify-content-between align-items-center mb-2 border-0 bg-light rounded-3">
-                        <div class="fw-bold">${p.siswa.nama_siswa}</div>
-                        <span class="badge ${badgeClass} rounded-pill px-3 py-2">${timeText}</span>
+                    <li class="list-group-item d-flex justify-content-between align-items-center mb-2 border-0 bg-light rounded-3 shadow-sm py-3">
+                        <div class="fw-bold text-secondary">${p.siswa.nama_siswa}</div>
+                        <div class="d-flex align-items-center">
+                            ${actionBtn}
+                            <span class="badge ${badgeClass} rounded-pill px-3 py-2">${timeText}</span>
+                        </div>
                     </li>`;
                 }).join('');
 
@@ -134,7 +160,6 @@
             renderTabs({!! json_encode($daftarHadir ?? []) !!});
         });
 
-        // API Request Handler
         const handlePresence = (payload, url) => {
             const statusBox = $('#status');
             const btnSubmit = $('#btn_submit_manual');
@@ -162,9 +187,18 @@
                     renderTabs(res.data.daftarHadir, res.data.sekolah_id);
                 }
 
-                // Reset Form
                 $('#sel_sekolah').val('');
                 $('#sel_siswa').prop('disabled', true).val('').html('<option>Pilih sekolah dulu</option>');
+
+                axios.get('{{ route("presensi.sekolahAktif") }}').then(r => {
+                    let options = '<option value="">-- Pilih Sekolah --</option>';
+                    if (r.data.length > 0) {
+                        options += r.data.map(s => `<option value="${s.id}">${s.nama_sekolah}</option>`).join('');
+                    } else {
+                        options = '<option value="">Semua sekolah selesai presensi</option>';
+                    }
+                    $('#sel_sekolah').html(options);
+                });
             })
             .catch(err => {
                 let msg = err.response ? err.response.data.message : 'Koneksi Gagal!';
@@ -172,16 +206,21 @@
                          .html(`<i class="fa-solid fa-circle-xmark fa-3x mb-3"></i><h4 class="fw-bold">${msg}</h4>`);
             })
             .finally(() => {
-                btnSubmit.html('<i class="fas fa-check-circle me-2"></i> KONFIRMASI HADIR / PULANG');
+                btnSubmit.html('<i class="fas fa-sign-in-alt me-2"></i> KONFIRMASI HADIR (MASUK)');
                 setTimeout(() => {
                     statusBox.removeClass().addClass('alert alert-light border status-message shadow-sm')
-                         .html('<i class="fa-solid fa-hand-pointer fa-3x mb-2 text-primary"></i><h4 class="fw-bold mb-0">Pilih Nama Untuk Presensi</h4>');
+                         .html('<i class="fa-solid fa-hand-pointer fa-3x mb-2 text-primary"></i><h4 class="fw-bold mb-0">Pilih Nama Untuk Kehadiran</h4>');
                     $('#student-info').empty();
                 }, 5000);
             });
         };
 
-        // Form Logic
+        $(document).on('click', '.btn-pulang', function() {
+            const siswaId = $(this).data('id');
+            $(this).html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+            handlePresence({siswa_id: siswaId}, '{{ route("presensi.pulang") }}');
+        });
+
         $('#sel_sekolah').on('change', function() {
             const sid = $(this).val();
             const sStudent = $('#sel_siswa');
@@ -192,7 +231,11 @@
 
             sStudent.html('<option>Memuat...</option>');
             axios.get(`/presensi/siswa-by-sekolah/${sid}`).then(r => {
-                sStudent.prop('disabled', false).html('<option value="">-- Pilih Nama Anda --</option>' + r.data.map(s => `<option value="${s.id}">${s.nama_siswa}</option>`).join(''));
+                if (r.data.length === 0) {
+                    sStudent.prop('disabled', true).html('<option value="">Semua siswa sekolah ini telah presensi</option>');
+                } else {
+                    sStudent.prop('disabled', false).html('<option value="">-- Pilih Nama Anda --</option>' + r.data.map(s => `<option value="${s.id}">${s.nama_siswa}</option>`).join(''));
+                }
             });
         });
 
@@ -202,7 +245,37 @@
             handlePresence({siswa_id: $('#sel_siswa').val()}, '{{ route("presensi.manual") }}');
         });
 
-        // Auto Refresh
+        $(document).on('click', '.btn-edit-pulang', function() {
+            $(this).html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+
+            let id = $(this).data('id');
+            const statusBox = $('#status');
+
+            axios.post('{{ route("presensi.updatePulang") }}', {
+                presensi_id: id,
+                _token: '{{ csrf_token() }}'
+            }).then(res => {
+                const color = res.data.status_class;
+                const icon = (color === 'success') ? 'check-circle' : 'exclamation-circle';
+
+                statusBox.removeClass().addClass(`alert alert-${color} status-message border-0 shadow-sm`)
+                         .html(`<i class="fa-solid fa-${icon} fa-3x mb-3"></i><h4 class="fw-bold">${res.data.message}</h4>`);
+
+                if (res.data.daftarHadir && res.data.sekolah_id) {
+                    renderTabs(res.data.daftarHadir, res.data.sekolah_id);
+                }
+
+                setTimeout(() => {
+                    statusBox.removeClass().addClass('alert alert-light border status-message shadow-sm')
+                             .html('<i class="fa-solid fa-hand-pointer fa-3x mb-2 text-primary"></i><h4 class="fw-bold mb-0">Pilih Nama Untuk Kehadiran</h4>');
+                }, 4000);
+
+            }).catch(e => {
+                alert('Terjadi kesalahan sistem saat memperbarui jam pulang.');
+                $(this).html('<i class="fas fa-sync-alt"></i> Update Pulang').prop('disabled', false);
+            });
+        });
+
         setInterval(() => {
             axios.get('{{ route("presensi.data") }}').then(res => {
                 if (res.data && res.data.daftarHadir) { renderTabs(res.data.daftarHadir); }

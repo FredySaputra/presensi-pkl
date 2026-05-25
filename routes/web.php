@@ -18,12 +18,13 @@ use App\Http\Controllers\Admin\PresensiController as AdminPresensiController;
 // Halaman utama tempat siswa melakukan scan atau pilih nama
 Route::get('/', [PresensiController::class, 'index'])->name('presensi.index');
 
+Route::get('/presensi/sekolah-aktif', [PresensiController::class, 'getDaftarSekolahAktif'])->name('presensi.sekolahAktif');
 // Proses presensi masuk/pulang via Pilih Nama (Manual)
 Route::post('/presensi/manual', [PresensiController::class, 'storeManual'])->name('presensi.manual');
-
+Route::post('/presensi/pulang', [PresensiController::class, 'storePulang'])->name('presensi.pulang');
 // API untuk memperbarui daftar hadir di sebelah kanan secara real-time (AJAX)
 Route::get('/presensi/data', [PresensiController::class, 'getAttendanceData'])->name('presensi.data');
-
+Route::post('/presensi/update-pulang', [PresensiController::class, 'updatePulangManual'])->name('presensi.updatePulang');
 // API untuk mendapatkan daftar siswa aktif berdasarkan sekolah (untuk Modal Manual)
 Route::get('/presensi/siswa-by-sekolah/{sekolah}', [PresensiController::class, 'getSiswaBySekolah']);
 
