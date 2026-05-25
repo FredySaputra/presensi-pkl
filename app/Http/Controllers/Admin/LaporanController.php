@@ -82,8 +82,8 @@ class LaporanController extends Controller
             ->map(function ($siswa) use ($bulanIni, $tahunIni) {
                 // Hitung jumlah izin WA bulan ini
                 $jumlahIzinWA = Presensi::where('siswa_id', $siswa->id)
-                    // ->whereMonth('tanggal', $bulanIni)
-                    // ->whereYear('tanggal', $tahunIni)
+                    ->whereMonth('tanggal', $bulanIni)
+                    ->whereYear('tanggal', $tahunIni)
                     ->where('status', 'Izin')
                     ->where('metode_izin', 'WA')
                     ->count();
@@ -116,8 +116,8 @@ class LaporanController extends Controller
             // Cek batasan izin WA
             if ($request->metode_izin == 'WA') {
                 $jumlahIzinWA = Presensi::where('siswa_id', $siswaId)
-                    // ->whereMonth('tanggal', $bulanIni)
-                    // ->whereYear('tanggal', $tahunIni)
+                    ->whereMonth('tanggal', $bulanIni)
+                    ->whereYear('tanggal', $tahunIni)
                     ->where('status', 'Izin')
                     ->where('metode_izin', 'WA')
                     ->count();
@@ -208,53 +208,59 @@ class LaporanController extends Controller
     }
 
     /**
-     * Membuat laporan presensi dalam format PDF (Versi Pivot/Matriks).
+     * Membuat laporan presensi dalam format PDF (Bisa Detail atau Rekap Umum).
      */
     public function cetakPdf(Request $request)
     {
         $tanggalMulai = $request->input('tanggal_mulai');
         $tanggalSelesai = $request->input('tanggal_selesai');
         $sekolahId = $request->input('sekolah_id');
+        $jenisCetak = $request->input('jenis_cetak', 'detail');
 
         $siswaQuery = Siswa::query()->with('sekolah');
         if ($sekolahId) {
             $siswaQuery->where('sekolah_id', $sekolahId);
         }
 
-        $siswas = $siswaQuery->orderBy('nama_siswa', 'asc')->get();
+        $siswas = $siswaQuery->orderBy('sekolah_id', 'asc')->orderBy('nama_siswa', 'asc')->get();
         $sekolah = $sekolahId ? Sekolah::find($sekolahId) : null;
 
         if ($siswas->isEmpty()) {
             return back()->with('error', 'Tidak ada data siswa untuk dicetak.');
         }
 
+        $start = Carbon::parse($tanggalMulai);
+        $end = Carbon::parse($tanggalSelesai);
+
         $presensis = Presensi::whereIn('siswa_id', $siswas->pluck('id'))
-            ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai])
+            ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])
             ->get()
             ->groupBy('tanggal')
             ->map(fn($items) => $items->keyBy('siswa_id'));
 
-        $period = CarbonPeriod::create($tanggalMulai, $tanggalSelesai);
+        $period = CarbonPeriod::create($start, $end);
         $dates = collect($period)->map(fn($date) => $date->format('Y-m-d'));
 
-        // Membangun data pivot untuk ditampilkan di tabel PDF
-        $pivotData = $dates->mapWithKeys(function ($tanggal) use ($siswas, $presensis) {
-            $dailyData = $siswas->mapWithKeys(function ($siswa) use ($tanggal, $presensis) {
+        // PERBAIKAN: Ambil semua data dari tabel hari_liburs (Sejarah Terselamatkan!)
+        $hariLiburs = \App\Models\HariLibur::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->get();
+
+        $pivotData = $dates->mapWithKeys(function ($tanggal) use ($siswas, $presensis, $hariLiburs) {
+            $dailyData = $siswas->mapWithKeys(function ($siswa) use ($tanggal, $presensis, $hariLiburs) {
                 $date = Carbon::parse($tanggal);
+
+                // 1. Cek Hari Minggu
                 $isSunday = $date->isSunday();
 
-                // Cek Hari Libur Sekolah (Menangani tipe data integer atau array secara aman)
-                $hariLiburSekolah = $siswa->sekolah->hari_libur;
-                $isSpecificHoliday = false;
-                if ($hariLiburSekolah) {
-                    $isSpecificHoliday = $date->dayOfWeekIso == $hariLiburSekolah;
-                }
+                // 2. Cek Database Libur (Nasional atau Khusus Sekolah ini)
+                $isLiburDatabase = $hariLiburs->where('tanggal', $tanggal)
+                                              ->filter(function ($libur) use ($siswa) {
+                                                  return is_null($libur->sekolah_id) || $libur->sekolah_id == $siswa->sekolah_id;
+                                              })->isNotEmpty();
 
                 $presensiSiswa = $presensis->get($tanggal, collect())->get($siswa->id);
-
                 $data = ['masuk' => '-', 'pulang' => '-', 'status' => 'Alpa'];
 
-                if ($isSunday || $isSpecificHoliday) {
+                if ($isSunday || $isLiburDatabase) {
                     $data = ['masuk' => 'LIBUR', 'pulang' => 'LIBUR', 'status' => 'LIBUR'];
                 } elseif ($presensiSiswa) {
                     $data = [
@@ -269,22 +275,45 @@ class LaporanController extends Controller
             return [$tanggal => $dailyData];
         });
 
-        $semuaKelompokSiswa = $siswas->chunk(5);
+        if ($jenisCetak === 'rekap') {
+            $datesByMonth = collect($dates)->groupBy(function($date) {
+                return Carbon::parse($date)->format('Y-m');
+            });
 
-        $pdf = Pdf::loadView('admin.laporan.pdf', [
-            'semuaKelompokSiswa' => $semuaKelompokSiswa,
-            'pivotData' => $pivotData,
-            'tanggalMulai' => $tanggalMulai,
-            'tanggalSelesai' => $tanggalSelesai,
-            'dates' => $dates,
-            'sekolah' => $sekolah,
-        ])->setPaper('a4', 'landscape');
+            $pdf = Pdf::loadView('admin.laporan.pdf_rekap', [
+                'siswas' => $siswas,
+                'pivotData' => $pivotData,
+                'datesByMonth' => $datesByMonth,
+                'sekolah' => $sekolah,
+            ])->setPaper('a4', 'landscape');
 
-        return $pdf->stream('laporan-presensi.pdf');
+            return $pdf->stream('rekap-presensi.pdf');
+
+        } else {
+            $semuaKelompokSiswa = $siswas->chunk(5);
+            $pdf = Pdf::loadView('admin.laporan.pdf', [
+                'semuaKelompokSiswa' => $semuaKelompokSiswa,
+                'pivotData' => $pivotData,
+                'tanggalMulai' => $start->toDateString(),
+                'tanggalSelesai' => $end->toDateString(),
+                'dates' => $dates,
+                'sekolah' => $sekolah,
+            ])->setPaper('a4', 'landscape');
+
+            return $pdf->stream('laporan-presensi-detail.pdf');
+        }
     }
 
     public function cetakExcel(Request $request)
     {
-        return Excel::download(new LaporanPresensiExport($request->input('tanggal_mulai'), $request->input('tanggal_selesai'), $request->input('sekolah_id')), 'laporan-presensi.xlsx');
+        $tanggalMulai = $request->input('tanggal_mulai');
+        $tanggalSelesai = $request->input('tanggal_selesai');
+        $sekolahId = $request->input('sekolah_id');
+        $jenisCetak = $request->input('jenis_cetak', 'detail');
+
+        return Excel::download(
+            new LaporanPresensiExport($tanggalMulai, $tanggalSelesai, $sekolahId, $jenisCetak),
+            'laporan-presensi-' . $jenisCetak . '.xlsx'
+        );
     }
 }

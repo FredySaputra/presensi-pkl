@@ -2,35 +2,47 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan Presensi</title>
+    <title>Laporan Presensi Detail</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 10px; }
-        .table { width: 100%; border-collapse: collapse; }
-        .table th, .table td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        .table th { background-color: #f2f2f2; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .table th, .table td { border: 1px solid #000; padding: 6px; text-align: center; vertical-align: middle; }
+        .table th { background-color: #f2f2f2; font-weight: bold; }
         .header { text-align: center; margin-bottom: 20px; }
         .page-break { page-break-after: always; }
-        .libur { background-color: #ffcccc; } /* Warna merah untuk libur */
-        .kurang { background-color: #fffacd; } /* Warna kuning untuk status kurang */
+
+        /* Pewarnaan Sel Sama Seperti Rekap */
+        .bg-libur { background-color: #cc0000; color: white; font-weight: bold; }
+        .bg-izin { background-color: #ffc107; font-weight: bold; }
+        .bg-alpa { background-color: #f8d7da; font-weight: bold; }
+        .bg-kurang { background-color: #fffacd; } /* Kuning Pucat untuk Telat/Kurang */
     </style>
 </head>
 <body>
 
 @foreach($semuaKelompokSiswa as $index => $kelompokSiswa)
     <div class="header">
-        <h2>LAPORAN PRESENSI</h2>
+        <h2>LAPORAN PRESENSI DETAIL</h2>
         @if($sekolah)
-            <h3>SEKOLAH: {{ $sekolah->nama_sekolah }}</h3>
+            <h3>SEKOLAH: {{ strtoupper($sekolah->nama_sekolah) }}</h3>
+        @else
+            <h3>SEMUA SEKOLAH</h3>
         @endif
-        <p>Tanggal: {{ \Carbon\Carbon::parse($tanggalMulai)->isoFormat('D MMMM Y') }} &ndash; {{ \Carbon\Carbon::parse($tanggalSelesai)->isoFormat('D MMMM Y') }}</p>
+        <p>Periode: {{ \Carbon\Carbon::parse($tanggalMulai)->isoFormat('D MMMM Y') }} &ndash; {{ \Carbon\Carbon::parse($tanggalSelesai)->isoFormat('D MMMM Y') }}</p>
     </div>
 
     <table class="table">
         <thead>
             <tr>
-                <th rowspan="2" style="vertical-align: middle;">Tanggal</th>
+                <th rowspan="2" style="width: 10%;">Tanggal</th>
                 @foreach ($kelompokSiswa as $siswa)
-                    <th colspan="2">{{ $siswa->nama_siswa }}</th>
+                    {{-- PERBAIKAN: colspan="2" DITAMBAHKAN KEMBALI DI SINI --}}
+                    <th colspan="2">
+                        {{ $siswa->nama_siswa }}
+                        @if(!$sekolah)
+                            <br><span style="font-size: 8px; font-weight: normal;">({{ $siswa->sekolah->nama_sekolah ?? '-' }})</span>
+                        @endif
+                    </th>
                 @endforeach
             </tr>
             <tr>
@@ -41,48 +53,29 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($tanggalData as $tanggal => $dataPresensiPerTanggal)
-                @php
-                    // Ambil data presensi siswa pertama untuk mengecek hari libur
-                    $presensiPertama = $dataPresensiPerTanggal->firstWhere('siswa_id', $kelompokSiswa->first()->id);
-                    $isLibur = $presensiPertama && $presensiPertama['status'] === 'LIBUR';
-                    
-                    // Cek apakah ada status 'Kurang' di baris ini
-                    $isKurang = false;
-                    foreach ($kelompokSiswa as $siswa) {
-                        $presensiSiswa = $dataPresensiPerTanggal->firstWhere('siswa_id', $siswa->id);
-                        if ($presensiSiswa && $presensiSiswa['status'] === 'Kurang') {
-                            $isKurang = true;
-                            break;
-                        }
-                    }
-
-                    $rowClass = '';
-                    if ($isLibur) {
-                        $rowClass = 'libur';
-                    } elseif ($isKurang) {
-                        $rowClass = 'kurang';
-                    }
-                @endphp
-                <tr class="{{ $rowClass }}">
+            @foreach ($pivotData as $tanggal => $dataPresensiPerTanggal)
+                <tr>
                     <td>{{ \Carbon\Carbon::parse($tanggal)->isoFormat('DD-MM-Y') }}</td>
+
                     @foreach ($kelompokSiswa as $siswa)
                         @php
-                            $presensi = $dataPresensiPerTanggal->firstWhere('siswa_id', $siswa->id);
+                            $presensi = $dataPresensiPerTanggal->get($siswa->id);
                         @endphp
-                        @if ($isLibur)
-                            <td colspan="2">LIBUR</td>
-                        @elseif ($presensi)
-                            @if ($presensi['status'] === 'Izin')
-                                <td colspan="2">IZIN</td>
-                            @elseif ($presensi['status'] === 'Alpa')
-                                <td colspan="2">ALPA</td>
-                            @else
-                                <td>{{ $presensi['jam_masuk'] ? \Carbon\Carbon::parse($presensi['jam_masuk'])->format('H:i') : '-' }}</td>
-                                <td>{{ $presensi['jam_pulang'] ? \Carbon\Carbon::parse($presensi['jam_pulang'])->format('H:i') : '-' }}</td>
-                            @endif
+
+                        @if ($presensi['status'] === 'LIBUR')
+                            <td colspan="2" class="bg-libur">LIBUR</td>
+                        @elseif ($presensi['status'] === 'Izin')
+                            <td colspan="2" class="bg-izin">IZIN</td>
+                        @elseif ($presensi['status'] === 'Alpa')
+                            <td colspan="2" class="bg-alpa">ALPA</td>
                         @else
-                            <td colspan="2">ALPA</td>
+                            {{-- Jika Kurang Jam / Telat / Pulang Cepat, beri warna kuning pucat --}}
+                            @php
+                                $isKurang = in_array($presensi['status'], ['Kurang', 'Telat', 'Pulang Cepat']);
+                                $bgClass = $isKurang ? 'bg-kurang' : '';
+                            @endphp
+                            <td class="{{ $bgClass }}">{{ $presensi['masuk'] }}</td>
+                            <td class="{{ $bgClass }}">{{ $presensi['pulang'] }}</td>
                         @endif
                     @endforeach
                 </tr>

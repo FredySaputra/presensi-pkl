@@ -7,7 +7,6 @@
 @stop
 
 @section('content')
-    {{-- Notifikasi Sukses --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -15,7 +14,6 @@
         </div>
     @endif
 
-    {{-- Notifikasi Error List (Jika ada siswa yang gagal izin WA) --}}
     @if(session('error_list'))
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
             <h5><i class="icon fas fa-exclamation-triangle"></i> Perhatian!</h5>
@@ -29,7 +27,6 @@
         </div>
     @endif
 
-    {{-- Notifikasi Error Biasa --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -37,7 +34,6 @@
         </div>
     @endif
 
-    {{-- Form Filter --}}
     <div class="card">
         <div class="card-body">
             <form action="{{ route('admin.laporan.index') }}" method="GET">
@@ -72,20 +68,32 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
+
+                <div class="row mt-3">
                     <div class="col-md-12">
-                        <button type="submit" class="btn btn-primary">Filter</button>
-                        <button form="cetakPdfForm" type="submit" class="btn btn-success"><i class="fas fa-print"></i> Cetak ke PDF</button>
-                        <button form="cetakExcelForm" type="submit" class="btn btn-info"><i class="fas fa-file-excel"></i> Ekspor ke Excel</button>
+                        <button type="submit" class="btn btn-primary mr-3"><i class="fas fa-filter"></i> Filter Tampilan</button>
+
+                        <span class="border-right mr-3"></span>
+
+                        <div class="d-inline-flex align-items-center mr-2">
+                            <select class="form-control mr-2" style="width: 250px;" onchange="document.getElementById('hidden_jenis_cetak').value = this.value">
+                                <option value="detail">Cetak PDF: Detail Waktu</option>
+                                <option value="rekap">Cetak PDF: Rekap Umum</option>
+                            </select>
+                            <button form="cetakPdfForm" type="submit" class="btn btn-success"><i class="fas fa-print"></i> Download PDF</button>
+                        </div>
+
+                        <button form="cetakExcelForm" type="submit" class="btn btn-info"><i class="fas fa-file-excel"></i> Ekspor Excel</button>
                     </div>
                 </div>
             </form>
-            {{-- Form tersembunyi untuk tombol cetak --}}
+
             <form id="cetakPdfForm" action="{{ route('admin.laporan.cetak_pdf') }}" method="POST" target="_blank" class="d-none">
                 @csrf
                 <input type="hidden" name="tanggal_mulai" value="{{ $tanggalMulai }}">
                 <input type="hidden" name="tanggal_selesai" value="{{ $tanggalSelesai }}">
                 <input type="hidden" name="sekolah_id" value="{{ $sekolahId }}">
+                <input type="hidden" name="jenis_cetak" id="hidden_jenis_cetak" value="detail">
             </form>
             <form id="cetakExcelForm" action="{{ route('admin.laporan.cetak_excel') }}" method="POST" class="d-none">
                 @csrf
@@ -96,7 +104,6 @@
         </div>
     </div>
 
-    {{-- Tabel Laporan --}}
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Data Presensi</h3>
@@ -190,7 +197,6 @@
                             </div>
                         </div>
 
-                        {{-- Pilihan Metode Izin --}}
                         <div class="form-group bg-light p-2 border rounded">
                             <label class="d-block">Metode Izin:</label>
                             <div class="form-check form-check-inline">
@@ -208,7 +214,6 @@
                         <input type="text" id="searchIzin" class="form-control mb-2" placeholder="Cari nama siswa...">
                         <div id="loadingIzin" class="text-center d-none"><div class="spinner-border spinner-border-sm"></div> Memuat...</div>
                         <div id="izin-list" style="height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
-
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -219,7 +224,6 @@
         </div>
     </div>
 
-    <!-- Modal Presensi Manual Massal -->
     <div class="modal fade" id="manualModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -316,12 +320,11 @@ $(document).ready(function() {
         let metode = $('input[name="metode_izin"]:checked').val();
         if (metode === 'WA') {
             let errorFound = false;
-            // Cek setiap checkbox yang dipilih
             $('#izin-list input:checked').each(function() {
                 let labelText = $(this).next('label').text();
                 if (labelText.includes('Limit WA Habis')) {
                     errorFound = true;
-                    return false; 
+                    return false;
                 }
             });
 

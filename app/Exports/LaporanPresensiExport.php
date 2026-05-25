@@ -3,87 +3,103 @@
 namespace App\Exports;
 
 use App\Models\Presensi;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
+use App\Models\Sekolah;
+use App\Models\Siswa;
+use Illuminate\Contracts\View\View;
+use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
-class LaporanPresensiExport implements FromCollection, WithHeadings, WithMapping
+class LaporanPresensiExport implements FromView, ShouldAutoSize
 {
-    protected $startDate;
-    protected $endDate;
+    protected $tanggalMulai;
+    protected $tanggalSelesai;
     protected $sekolahId;
+    protected $jenisCetak;
 
-    public function __construct($startDate, $endDate, $sekolahId)
+    public function __construct($tanggalMulai, $tanggalSelesai, $sekolahId, $jenisCetak = 'detail')
     {
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
+        $this->tanggalMulai = $tanggalMulai;
+        $this->tanggalSelesai = $tanggalSelesai;
         $this->sekolahId = $sekolahId;
+        $this->jenisCetak = $jenisCetak;
     }
 
-    /**
-    * @return \Illuminate\Support\Collection
-    */
-    public function collection()
+    public function view(): View
     {
-        $query = Presensi::with(['siswa.sekolah'])
-                         ->whereBetween('tanggal', [$this->startDate, $this->endDate]);
-
+        $siswaQuery = Siswa::query()->with('sekolah');
         if ($this->sekolahId) {
-            $query->whereHas('siswa', function ($q) {
-                $q->where('sekolah_id', $this->sekolahId);
+            $siswaQuery->where('sekolah_id', $this->sekolahId);
+        }
+
+        $siswas = $siswaQuery->orderBy('sekolah_id', 'asc')->orderBy('nama_siswa', 'asc')->get();
+        $sekolah = $this->sekolahId ? Sekolah::find($this->sekolahId) : null;
+
+        $start = Carbon::parse($this->tanggalMulai);
+        $end = Carbon::parse($this->tanggalSelesai);
+
+        $presensis = Presensi::whereIn('siswa_id', $siswas->pluck('id'))
+            ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])
+            ->get()
+            ->groupBy('tanggal')
+            ->map(fn($items) => $items->keyBy('siswa_id'));
+
+        $period = CarbonPeriod::create($start, $end);
+        $dates = collect($period)->map(fn($date) => $date->format('Y-m-d'));
+
+        // PERBAIKAN: Ambil data sejarah libur
+        $hariLiburs = \App\Models\HariLibur::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->get();
+
+        $pivotData = $dates->mapWithKeys(function ($tanggal) use ($siswas, $presensis, $hariLiburs) {
+            $dailyData = $siswas->mapWithKeys(function ($siswa) use ($tanggal, $presensis, $hariLiburs) {
+                $date = Carbon::parse($tanggal);
+
+                $isSunday = $date->isSunday();
+
+                // Cek Database Libur (Nasional atau Khusus Sekolah ini)
+                $isLiburDatabase = $hariLiburs->where('tanggal', $tanggal)
+                                              ->filter(function ($libur) use ($siswa) {
+                                                  return is_null($libur->sekolah_id) || $libur->sekolah_id == $siswa->sekolah_id;
+                                              })->isNotEmpty();
+
+                $presensiSiswa = $presensis->get($tanggal, collect())->get($siswa->id);
+                $data = ['masuk' => '-', 'pulang' => '-', 'status' => 'Alpa'];
+
+                if ($isSunday || $isLiburDatabase) {
+                    $data = ['masuk' => 'LIBUR', 'pulang' => 'LIBUR', 'status' => 'LIBUR'];
+                } elseif ($presensiSiswa) {
+                    $data = [
+                        'masuk' => $presensiSiswa->jam_masuk ? Carbon::parse($presensiSiswa->jam_masuk)->format('H:i') : ($presensiSiswa->status == 'Izin' ? 'IZIN' : '-'),
+                        'pulang' => $presensiSiswa->jam_pulang ? Carbon::parse($presensiSiswa->jam_pulang)->format('H:i') : '-',
+                        'status' => $presensiSiswa->status
+                    ];
+                }
+
+                return [$siswa->id => $data];
             });
+            return [$tanggal => $dailyData];
+        });
+
+        if ($this->jenisCetak === 'rekap') {
+            $datesByMonth = collect($dates)->groupBy(function($date) {
+                return Carbon::parse($date)->format('Y-m');
+            });
+
+            return view('admin.laporan.excel_rekap', [
+                'siswas' => $siswas,
+                'pivotData' => $pivotData,
+                'datesByMonth' => $datesByMonth,
+                'sekolah' => $sekolah,
+            ]);
+        } else {
+            return view('admin.laporan.excel', [
+                'siswas' => $siswas,
+                'pivotData' => $pivotData,
+                'tanggalMulai' => $this->tanggalMulai,
+                'tanggalSelesai' => $this->tanggalSelesai,
+                'sekolah' => $sekolah,
+            ]);
         }
-
-        return $query->orderBy('tanggal', 'asc')->get();
-    }
-
-    /**
-     * Mendefinisikan header untuk kolom Excel.
-     */
-    public function headings(): array
-    {
-        return [
-            'Tanggal',
-            'Nama Siswa',
-            'Asal Sekolah',
-            'Status',
-            'Jam Masuk',
-            'Jam Pulang',
-            'Keterangan',
-        ];
-    }
-
-    /**
-     * Memetakan data dari collection ke format yang diinginkan.
-     */
-    public function map($presensi): array
-    {
-        $keterangan = $presensi->keterangan ?? '';
-        if ($presensi->status == 'Hadir') {
-            $jamMasuk = Carbon::parse($presensi->jam_masuk);
-            $jamPulang = $presensi->jam_pulang ? Carbon::parse($presensi->jam_pulang) : null;
-            $batasMasuk = Carbon::createFromTimeString('09:00:59');
-            $batasPulang = Carbon::createFromTimeString('15:00:00');
-
-            $keterangan_list = [];
-            if ($jamMasuk->isAfter($batasMasuk)) {
-                $keterangan_list[] = 'Telat';
-            }
-            if ($jamPulang && $jamPulang->isBefore($batasPulang)) {
-                $keterangan_list[] = 'Pulang Cepat';
-            }
-            $keterangan = implode(', ', $keterangan_list);
-        }
-
-        return [
-            Carbon::parse($presensi->tanggal)->format('d-m-Y'),
-            $presensi->siswa->nama_siswa ?? 'Siswa Dihapus',
-            $presensi->siswa->sekolah->nama_sekolah ?? 'Sekolah Dihapus',
-            $presensi->status,
-            $presensi->jam_masuk ? Carbon::parse($presensi->jam_masuk)->format('H:i:s') : '-',
-            $presensi->jam_pulang ? Carbon::parse($presensi->jam_pulang)->format('H:i:s') : '-',
-            $keterangan ?: '-',
-        ];
     }
 }

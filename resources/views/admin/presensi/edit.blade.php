@@ -28,12 +28,15 @@
                     <select name="status" id="status" class="form-control">
                         <option value="Hadir" {{ $presensi->status == 'Hadir' ? 'selected' : '' }}>Hadir</option>
                         <option value="Izin" {{ $presensi->status == 'Izin' ? 'selected' : '' }}>Izin</option>
+                        <option value="Kurang" {{ $presensi->status == 'Kurang' ? 'selected' : '' }}>Kurang</option>
+                        <option value="Telat" {{ $presensi->status == 'Telat' ? 'selected' : '' }}>Telat</option>
+                        <option value="Pulang Cepat" {{ $presensi->status == 'Pulang Cepat' ? 'selected' : '' }}>Pulang Cepat</option>
                         <option value="Alpa" {{ $presensi->status == 'Alpa' ? 'selected' : '' }}>Alpa</option>
                     </select>
                 </div>
 
                 {{-- Field ini akan muncul/hilang berdasarkan pilihan status --}}
-                <div id="waktu-kehadiran-fields" style="{{ $presensi->status != 'Hadir' ? 'display:none;' : '' }}">
+                <div id="waktu-kehadiran-fields" style="{{ in_array($presensi->status, ['Izin', 'Alpa']) ? 'display:none;' : '' }}">
                     <div class="form-group">
                         <label for="jam_masuk">Jam Masuk</label>
                         <input type="time" name="jam_masuk" class="form-control" value="{{ $presensi->jam_masuk ? \Carbon\Carbon::parse($presensi->jam_masuk)->format('H:i') : '' }}">
@@ -44,7 +47,7 @@
                     </div>
                 </div>
 
-                <div id="keterangan-fields" style="{{ $presensi->status == 'Hadir' ? 'display:none;' : '' }}">
+                <div id="keterangan-fields" style="{{ !in_array($presensi->status, ['Izin', 'Alpa']) ? 'display:none;' : '' }}">
                     <div class="form-group">
                         <label for="keterangan">Keterangan</label>
                         <input type="text" name="keterangan" class="form-control" value="{{ $presensi->keterangan }}">
@@ -63,14 +66,15 @@
         // JavaScript untuk menampilkan/menyembunyikan field berdasarkan status
         $(document).ready(function() {
             $('#status').on('change', function() {
-                if ($(this).val() === 'Hadir') {
-                    $('#waktu-kehadiran-fields').show();
-                    $('#keterangan-fields').hide();
-                } else {
+                var val = $(this).val();
+                if (val === 'Izin' || val === 'Alpa') {
                     $('#waktu-kehadiran-fields').hide();
                     $('#keterangan-fields').show();
+                } else {
+                    $('#waktu-kehadiran-fields').show();
+                    $('#keterangan-fields').hide();
                 }
-            }).trigger('change'); // Trigger saat halaman dimuat
+            }).trigger('change');
         });
     </script>
 @stop
