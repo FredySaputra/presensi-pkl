@@ -25,7 +25,6 @@ class LaporanController extends Controller
         $sekolahId = $request->input('sekolah_id');
         $search = $request->input('search');
 
-        // Query Presensi (Untuk tabel laporan)
         $presensis = Presensi::with(['siswa.sekolah'])
             ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai])
             ->when($sekolahId, function ($query, $sekolahId) {
@@ -44,11 +43,6 @@ class LaporanController extends Controller
 
         $sekolahs = Sekolah::orderBy('nama_sekolah', 'asc')->get();
 
-        // PERBAIKAN DISINI: Filter $semuaSiswa
-        // Hanya ambil siswa yang masa PKL-nya "aktif" atau "beririsan" dengan rentang tanggal yang dipilih
-        // Logika:
-        // 1. Siswa mulai PKL sebelum (atau pas) tanggal akhir filter.
-        // 2. DAN Siswa selesai PKL setelah (atau pas) tanggal mulai filter.
         $semuaSiswa = Siswa::with('sekolah')
             ->where('mulai_pkl', '<=', $tanggalSelesai)
             ->where('selesai_pkl', '>=', $tanggalMulai)
@@ -80,7 +74,6 @@ class LaporanController extends Controller
             ->orderBy('nama_siswa', 'asc')
             ->get()
             ->map(function ($siswa) use ($bulanIni, $tahunIni) {
-                // Hitung jumlah izin WA bulan ini
                 $jumlahIzinWA = Presensi::where('siswa_id', $siswa->id)
                     ->whereMonth('tanggal', $bulanIni)
                     ->whereYear('tanggal', $tahunIni)
@@ -105,7 +98,7 @@ class LaporanController extends Controller
             'siswa_ids.*' => 'exists:siswas,id',
             'keterangan'  => 'required|string|max:255',
             'tanggal'     => 'required|date',
-            'metode_izin' => 'required|in:WA,Surat', // Validasi metode izin
+            'metode_izin' => 'required|in:WA,Surat',
         ]);
 
         $bulanIni = Carbon::parse($request->tanggal)->month;
@@ -113,7 +106,6 @@ class LaporanController extends Controller
         $errorMessages = [];
 
         foreach ($request->siswa_ids as $siswaId) {
-            // Cek batasan izin WA
             if ($request->metode_izin == 'WA') {
                 $jumlahIzinWA = Presensi::where('siswa_id', $siswaId)
                     ->whereMonth('tanggal', $bulanIni)
@@ -125,7 +117,7 @@ class LaporanController extends Controller
                 if ($jumlahIzinWA >= 3) {
                     $siswa = Siswa::find($siswaId);
                     $errorMessages[] = "Siswa {$siswa->nama_siswa} sudah mencapai batas 3x izin via WhatsApp bulan ini. Harap gunakan metode Surat.";
-                    continue; // Skip siswa ini, jangan simpan
+                    continue;
                 }
             }
 
@@ -136,7 +128,7 @@ class LaporanController extends Controller
                     'keterangan' => $request->keterangan,
                     'jam_masuk' => null,
                     'jam_pulang' => null,
-                    'metode_izin' => $request->metode_izin // Simpan metode izin
+                    'metode_izin' => $request->metode_izin
                 ]
             );
         }
@@ -144,7 +136,7 @@ class LaporanController extends Controller
         if (count($errorMessages) > 0) {
             return redirect()->route('admin.laporan.index')
                              ->with('success', 'Beberapa data berhasil disimpan.')
-                             ->with('error_list', $errorMessages); // Kirim daftar error ke view
+                             ->with('error_list', $errorMessages);
         }
 
         return redirect()->route('admin.laporan.index')->with('success', 'Status izin berhasil dicatat untuk semua siswa terpilih.');
@@ -165,15 +157,13 @@ class LaporanController extends Controller
 
         $tanggal = $request->input('tanggal');
 
-        // FILTER: Ambil hanya siswa yang ID-nya dikirim DAN statusnya masih aktif PKL pada tanggal tersebut
-        // Logika aktif: Tanggal input harus berada di antara mulai_pkl dan selesai_pkl
+
         $validSiswaIds = Siswa::whereIn('id', $request->siswa_ids)
             ->where('mulai_pkl', '<=', $tanggal)
             ->where('selesai_pkl', '>=', $tanggal)
             ->pluck('id')
             ->toArray();
 
-        // Jika tidak ada siswa yang valid/aktif pada tanggal tersebut
         if (empty($validSiswaIds)) {
             return redirect()->route('admin.laporan.index')
                 ->with('error', 'Semua siswa yang dipilih tidak sedang dalam masa aktif PKL pada tanggal tersebut.');
@@ -183,13 +173,11 @@ class LaporanController extends Controller
         if ($request->jam_masuk && $request->jam_pulang) {
             $jamMasuk = Carbon::parse($request->jam_masuk);
             $jamPulang = Carbon::parse($request->jam_pulang);
-            // Hadir jika durasi >= 5 jam (300 menit)
             if ($jamPulang->diffInMinutes($jamMasuk) < 300) {
                 $status = 'Kurang';
             }
         }
 
-        // Loop hanya pada ID yang valid
         foreach ($validSiswaIds as $siswaId) {
             Presensi::updateOrCreate(
                 ['siswa_id' => $siswaId, 'tanggal' => $request->tanggal],
@@ -241,17 +229,14 @@ class LaporanController extends Controller
         $period = CarbonPeriod::create($start, $end);
         $dates = collect($period)->map(fn($date) => $date->format('Y-m-d'));
 
-        // PERBAIKAN: Ambil semua data dari tabel hari_liburs (Sejarah Terselamatkan!)
         $hariLiburs = \App\Models\HariLibur::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->get();
 
         $pivotData = $dates->mapWithKeys(function ($tanggal) use ($siswas, $presensis, $hariLiburs) {
             $dailyData = $siswas->mapWithKeys(function ($siswa) use ($tanggal, $presensis, $hariLiburs) {
                 $date = Carbon::parse($tanggal);
 
-                // 1. Cek Hari Minggu
                 $isSunday = $date->isSunday();
 
-                // 2. Cek Database Libur (Nasional atau Khusus Sekolah ini)
                 $isLiburDatabase = $hariLiburs->where('tanggal', $tanggal)
                                               ->filter(function ($libur) use ($siswa) {
                                                   return is_null($libur->sekolah_id) || $libur->sekolah_id == $siswa->sekolah_id;

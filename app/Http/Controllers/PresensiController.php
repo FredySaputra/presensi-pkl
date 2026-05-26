@@ -1,5 +1,10 @@
 <?php
-
+/*
+ * LaporanPresensiExport.php
+ * * Copyright (c) 2026 Fredy Dwi Saputra
+ * Licensed under the MIT License.
+ * See the LICENSE file in the project root for full license information.
+ */
 namespace App\Http\Controllers;
 
 use App\Models\Presensi;
