@@ -1,61 +1,75 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Presensi Siswa PKL
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
 
-## About Laravel
+Aplikasi berbasis web untuk memonitor dan mengelola presensi harian siswa Praktik Kerja Lapangan (PKL). Sistem ini dirancang agar cepat, interaktif, dan menghasilkan rekapitulasi data yang akurat untuk kebutuhan pelaporan sekolah maupun instansi.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+* **Dashboard Monitor Real-time:** Memantau status kehadiran siswa (Hadir, Telat, Pulang Cepat) secara langsung dengan fitur *auto-refresh* tanpa perlu memuat ulang halaman.
+* **Presensi Masuk & Pulang Cerdas:** * Otomatis menghitung waktu keterlambatan dan kepulangan lebih awal.
+    * *Smart Dropdown*: Sekolah dan siswa yang telah melakukan presensi akan otomatis disembunyikan dari pilihan.
+    * Fitur *One-Click Update* untuk mengoreksi jam pulang siswa secara *real-time*.
+* **Manajemen Izin Terkontrol:**
+    * Mendukung perizinan via WhatsApp (maksimal 3x per bulan) dan Surat Fisik (tanpa batas).
+    * Fitur "Catat Izin Massal" bagi admin.
+* **Laporan & Ekspor Tingkat Lanjut (PDF & Excel):**
+    * **Mode Detail:** Menampilkan data lengkap jam kedatangan dan kepulangan per hari.
+    * **Mode Rekap Umum:** Mencetak matriks kalender bulanan dengan kode huruf berwarna (H, I, A, L) persis seperti buku absensi fisik konvensional.
+    * Otomatis memisahkan tabel laporan per bulan untuk tampilan yang lebih rapi (Pagination cetak cerdas).
+* **Manajemen Hari Libur:** Terintegrasi dengan kalender untuk mendeteksi libur akhir pekan (Sabtu/Minggu) dan libur nasional/khusus sekolah.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Teknologi yang Digunakan
 
-## Learning Laravel
+* **Framework:** Laravel 12
+* **Frontend:** Bootstrap 5, AdminLTE 3
+* **JavaScript:** jQuery, Axios (untuk request API asynchronous)
+* **PDF Generator:** Barryvdh\DomPDF
+* **Excel Export:** Maatwebsite\Laravel-Excel
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Panduan Instalasi
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Ikuti langkah-langkah berikut untuk menjalankan aplikasi ini di komputer Anda:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1.  **Clone repositori ini:**
+    ```bash
+    git clone https://github.com/FredySaputra/presensi-pkl.git
+    cd presensi-pkl
+    ```
 
-## Laravel Sponsors
+2.  **Instal dependensi PHP:**
+    ```bash
+    composer install
+    ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+3.  **Salin file environment dan atur konfigurasi:**
+    ```bash
+    cp .env.example .env
+    ```
+    Buka file `.env` dan sesuaikan konfigurasi *database* Anda (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
 
-### Premium Partners
+4.  **Generate Application Key:**
+    ```bash
+    php artisan key:generate
+    ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+5.  **Jalankan Migrasi & Seeder Database:**
+    ```bash
+    php artisan migrate --seed
+    ```
 
-## Contributing
+6.  **Jalankan Local Development Server:**
+    ```bash
+    php artisan serve
+    ```
+    Aplikasi sekarang dapat diakses melalui `http://127.0.0.1:8000`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Lisensi
 
-## Code of Conduct
+Proyek ini dilisensikan di bawah [MIT License](LICENSE).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Copyright (c) 2026 Fredy Dwi Saputra
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Silakan menggunakan, memodifikasi, dan mendistribusikan kode ini sesuai dengan ketentuan yang berlaku pada lisensi.
