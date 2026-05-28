@@ -14,7 +14,7 @@
             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
     @endif
-    
+
     {{-- Notifikasi Error List (Jika ada siswa yang gagal izin WA) --}}
     @if(session('error_list'))
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -165,7 +165,6 @@
         </div>
     </div>
 
-    <!-- Modal Catat Izin (Update Fitur WA/Surat) -->
     <div class="modal fade" id="izinModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -190,7 +189,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         {{-- Pilihan Metode Izin --}}
                         <div class="form-group bg-light p-2 border rounded">
                             <label class="d-block">Metode Izin:</label>
@@ -209,7 +208,7 @@
                         <input type="text" id="searchIzin" class="form-control mb-2" placeholder="Cari nama siswa...">
                         <div id="loadingIzin" class="text-center d-none"><div class="spinner-border spinner-border-sm"></div> Memuat...</div>
                         <div id="izin-list" style="height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
-                            {{-- Diisi AJAX --}}
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -262,7 +261,7 @@
 @section('js')
 <script>
 $(document).ready(function() {
-    // FUNGSI AJAX UNTUK MODAL IZIN
+
     function fetchIzinStudents() {
         let tgl = $('#izin_tanggal').val();
         $('#loadingIzin').removeClass('d-none');
@@ -272,7 +271,6 @@ $(document).ready(function() {
             $('#loadingIzin').addClass('d-none');
             if(data.length > 0) {
                 data.forEach(s => {
-                    // Logic Badge Limit
                     let badge = '';
                     if (s.jumlah_izin_wa >= 3) {
                         badge = `<span class="badge badge-danger ml-2">Limit WA Habis (${s.jumlah_izin_wa}/3)</span>`;
@@ -300,7 +298,6 @@ $(document).ready(function() {
     $('#izin_tanggal').on('change', fetchIzinStudents);
     $('#izinModal').on('shown.bs.modal', fetchIzinStudents);
 
-    // SEARCH FILTER
     $('#searchIzin').on('keyup', function() {
         let val = $(this).val().toLowerCase();
         $('.item-izin').filter(function() {
@@ -315,7 +312,6 @@ $(document).ready(function() {
         });
     });
 
-    // Validasi Client-Side sebelum submit Izin
     $('form[action="{{ route("admin.laporan.izin") }}"]').on('submit', function(e) {
         let metode = $('input[name="metode_izin"]:checked').val();
         if (metode === 'WA') {
@@ -325,7 +321,7 @@ $(document).ready(function() {
                 let labelText = $(this).next('label').text();
                 if (labelText.includes('Limit WA Habis')) {
                     errorFound = true;
-                    return false; // break loop
+                    return false; 
                 }
             });
 

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\HariLibur;
 use App\Models\Sekolah;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +37,9 @@ class SekolahController extends Controller
             'longitude'    => 'nullable|string|max:255',
         ]);
 
-        Sekolah::create($request->all());
+        $sekolah = Sekolah::create($request->all());
+
+        $this->generateJadwalLibur($sekolah);
 
         return redirect()->route('admin.sekolah.index')
                          ->with('success', 'Data sekolah berhasil ditambahkan.');
@@ -63,6 +67,8 @@ class SekolahController extends Controller
 
         $sekolah->update($request->all());
 
+        $this->generateJadwalLibur($sekolah);
+
         return redirect()->route('admin.sekolah.index')
                          ->with('success', 'Data sekolah berhasil diperbarui.');
     }
@@ -72,5 +78,50 @@ class SekolahController extends Controller
         $sekolah->delete();
         return redirect()->route('admin.sekolah.index')
                          ->with('success', 'Data sekolah berhasil dihapus.');
+    }
+
+    /**
+     * Generate hari libur fisik ke database untuk 6 bulan ke depan
+     */
+    private function generateJadwalLibur($sekolah)
+    {
+        // 1. Paksa data menjadi angka bulat (Integer) agar Carbon tidak error
+        $hariLiburInt = (int) $sekolah->hari_libur;
+
+        // 2. Bersihkan sisa jadwal lama di masa depan
+        HariLibur::where('sekolah_id', $sekolah->id)
+                 ->where('tanggal', '>=', Carbon::today()->toDateString())
+                 ->delete();
+
+        // 3. Eksekusi HANYA jika harinya valid (1=Senin sampai 6=Sabtu)
+        if ($hariLiburInt >= 1 && $hariLiburInt <= 6) {
+            $startDate = Carbon::today();
+            $endDate = Carbon::today()->addMonths(6);
+
+            // Gunakan copy() untuk menduplikasi waktu agar aman
+            $nextHoliday = $startDate->copy()->next($hariLiburInt);
+            if ($startDate->dayOfWeekIso === $hariLiburInt) {
+                $nextHoliday = $startDate->copy();
+            }
+
+            $holidays = [];
+
+            // Lakukan perulangan tambah 1 minggu ke depan
+            for ($date = $nextHoliday->copy(); $date->lte($endDate); $date->addWeek()) {
+                $holidays[] = [
+                    'tanggal'    => $date->format('Y-m-d'),
+                    'keterangan' => 'Libur Mingguan: ' . $sekolah->nama_sekolah,
+                    'sekolah_id' => $sekolah->id,
+                    // 4. Paksa waktu menjadi String agar diterima oleh PDO bulk insert
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                ];
+            }
+
+            // Insert data ke database
+            if (!empty($holidays)) {
+                HariLibur::insert($holidays);
+            }
+        }
     }
 }

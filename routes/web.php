@@ -64,7 +64,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     // Fitur Ekspor Laporan
     Route::post('/laporan/pdf', [LaporanController::class, 'cetakPdf'])->name('laporan.cetak_pdf');
     Route::post('/laporan/excel', [LaporanController::class, 'cetakExcel'])->name('laporan.cetak_excel');
+    Route::resource('presensi', AdminPresensiController::class)->only(['edit', 'update']);
 
+    // Manajemen Hari Libur (Kalender)
+    Route::get('/harilibur/events', [App\Http\Controllers\Admin\HariLiburController::class, 'getEvents'])->name('harilibur.events');
+    Route::resource('harilibur', App\Http\Controllers\Admin\HariLiburController::class)->except(['create', 'show', 'edit', 'update']);
 });
 
 require __DIR__ . '/auth.php';

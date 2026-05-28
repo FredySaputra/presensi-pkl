@@ -86,8 +86,8 @@ return [
     'auth_logo' => [
         'enabled' => false,
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-            'alt' => 'Auth Logo',
+            'path' => 'logo/lab.png',
+            'alt' => 'Logo Lab ICT',
             'class' => '',
             'width' => 50,
             'height' => 50,
@@ -305,7 +305,7 @@ return [
     ],
     [
         'text'        => 'Dashboard',
-        'url'         => 'admin/dashboard', // URL ini akan kita buat di route
+        'url'         => 'admin/dashboard',  
         'icon'        => 'fas fa-fw fa-tachometer-alt',
     ],
     [
@@ -322,6 +322,12 @@ return [
                 'url'  => 'admin/siswa',
                 'icon' => 'fas fa-fw fa-users',
             ],
+            [
+            'text' => 'Hari Libur',
+            'route' => 'admin.harilibur.index',
+            'icon' => 'fas fa-fw fa-calendar-alt',
+            'active' => ['admin/harilibur*'],
+        ],
         ],
     ],
     [

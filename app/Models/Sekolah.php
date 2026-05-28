@@ -12,7 +12,7 @@ class Sekolah extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['nama_sekolah', 'alamat', 'latitude', 'longitude'];
+    protected $fillable = ['nama_sekolah', 'alamat', 'latitude', 'longitude','hari_libur'];
 
      protected function setNamaSekolahAttribute($value)
     {

@@ -10,6 +10,7 @@ use App\Models\Siswa;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
@@ -45,11 +46,11 @@ class LaporanController extends Controller
 
         // PERBAIKAN DISINI: Filter $semuaSiswa
         // Hanya ambil siswa yang masa PKL-nya "aktif" atau "beririsan" dengan rentang tanggal yang dipilih
-        // Logika: 
+        // Logika:
         // 1. Siswa mulai PKL sebelum (atau pas) tanggal akhir filter.
         // 2. DAN Siswa selesai PKL setelah (atau pas) tanggal mulai filter.
         $semuaSiswa = Siswa::with('sekolah')
-            ->where('mulai_pkl', '<=', $tanggalSelesai) 
+            ->where('mulai_pkl', '<=', $tanggalSelesai)
             ->where('selesai_pkl', '>=', $tanggalMulai)
             ->orderBy('nama_siswa', 'asc')
             ->get();
@@ -86,11 +87,11 @@ class LaporanController extends Controller
                     ->where('status', 'Izin')
                     ->where('metode_izin', 'WA')
                     ->count();
-                
+
                 $siswa->jumlah_izin_wa = $jumlahIzinWA;
                 return $siswa;
             });
-            
+
         return response()->json($siswaTersedia);
     }
 
@@ -120,7 +121,7 @@ class LaporanController extends Controller
                     ->where('status', 'Izin')
                     ->where('metode_izin', 'WA')
                     ->count();
-                
+
                 if ($jumlahIzinWA >= 3) {
                     $siswa = Siswa::find($siswaId);
                     $errorMessages[] = "Siswa {$siswa->nama_siswa} sudah mencapai batas 3x izin via WhatsApp bulan ini. Harap gunakan metode Surat.";
@@ -131,9 +132,9 @@ class LaporanController extends Controller
             Presensi::updateOrCreate(
                 ['siswa_id' => $siswaId, 'tanggal' => $request->tanggal],
                 [
-                    'status' => 'Izin', 
-                    'keterangan' => $request->keterangan, 
-                    'jam_masuk' => null, 
+                    'status' => 'Izin',
+                    'keterangan' => $request->keterangan,
+                    'jam_masuk' => null,
                     'jam_pulang' => null,
                     'metode_izin' => $request->metode_izin // Simpan metode izin
                 ]
@@ -148,7 +149,7 @@ class LaporanController extends Controller
 
         return redirect()->route('admin.laporan.index')->with('success', 'Status izin berhasil dicatat untuk semua siswa terpilih.');
     }
-    
+
     /**
      * Mencatat presensi manual untuk banyak siswa sekaligus (Massal via Checkbox).
      */
@@ -193,8 +194,8 @@ class LaporanController extends Controller
             Presensi::updateOrCreate(
                 ['siswa_id' => $siswaId, 'tanggal' => $request->tanggal],
                 [
-                    'jam_masuk' => $request->jam_masuk, 
-                    'jam_pulang' => $request->jam_pulang, 
+                    'jam_masuk' => $request->jam_masuk,
+                    'jam_pulang' => $request->jam_pulang,
                     'status' => $status,
                     'keterangan' => 'Input Manual'
                 ]
@@ -241,7 +242,7 @@ class LaporanController extends Controller
             $dailyData = $siswas->mapWithKeys(function ($siswa) use ($tanggal, $presensis) {
                 $date = Carbon::parse($tanggal);
                 $isSunday = $date->isSunday();
-                
+
                 // Cek Hari Libur Sekolah (Menangani tipe data integer atau array secara aman)
                 $hariLiburSekolah = $siswa->sekolah->hari_libur;
                 $isSpecificHoliday = false;
@@ -250,9 +251,9 @@ class LaporanController extends Controller
                 }
 
                 $presensiSiswa = $presensis->get($tanggal, collect())->get($siswa->id);
-                
+
                 $data = ['masuk' => '-', 'pulang' => '-', 'status' => 'Alpa'];
-                
+
                 if ($isSunday || $isSpecificHoliday) {
                     $data = ['masuk' => 'LIBUR', 'pulang' => 'LIBUR', 'status' => 'LIBUR'];
                 } elseif ($presensiSiswa) {
@@ -262,7 +263,7 @@ class LaporanController extends Controller
                         'status' => $presensiSiswa->status
                     ];
                 }
-                
+
                 return [$siswa->id => $data];
             });
             return [$tanggal => $dailyData];
