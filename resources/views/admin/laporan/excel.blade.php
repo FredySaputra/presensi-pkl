@@ -16,7 +16,6 @@
             <th rowspan="2" style="font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #000000;">Tanggal</th>
             @foreach ($siswas as $siswa)
                 <th colspan="2" style="font-weight: bold; text-align: center; border: 1px solid #000000;">
-                    {{-- PERBAIKAN: Nama sekolah dijadikan satu baris --}}
                     {{ strtoupper($siswa->nama_siswa) }} @if(!$sekolah) ({{ $siswa->sekolah->nama_sekolah ?? '-' }}) @endif
                 </th>
             @endforeach
@@ -34,9 +33,7 @@
                 <td style="text-align: center; border: 1px solid #000000;">{{ \Carbon\Carbon::parse($tanggal)->isoFormat('DD-MM-Y') }}</td>
 
                 @foreach ($siswas as $siswa)
-                    @php
-                        $presensi = $dataPresensiPerTanggal->get($siswa->id);
-                    @endphp
+                    @php $presensi = $dataPresensiPerTanggal->get($siswa->id); @endphp
 
                     @if ($presensi['status'] === 'LIBUR')
                         <td colspan="2" style="text-align: center; background-color: #cc0000; color: #ffffff; border: 1px solid #000000;">LIBUR</td>
@@ -55,5 +52,25 @@
                 @endforeach
             </tr>
         @endforeach
+
+        {{-- BARIS SUMMARY PERSENTASE --}}
+        <tr>
+            <td style="font-weight: bold; text-align: right; background-color: #e9ecef; border: 1px solid #000000;">% Kehadiran:</td>
+            @foreach ($siswas as $siswa)
+                @php
+                    $totH = 0; $totI = 0; $totL = 0;
+                    $jmlHari = count($dates);
+                    foreach($dates as $tgl) {
+                        $pres = $pivotData[$tgl][$siswa->id];
+                        if($pres['status'] === 'LIBUR') $totL++;
+                        elseif($pres['status'] === 'Izin') $totI++;
+                        elseif(in_array($pres['status'], ['Hadir', 'Telat', 'Kurang', 'Pulang Cepat'])) $totH++;
+                    }
+                    $persen = $jmlHari > 0 ? round((($totH + $totI + $totL) / $jmlHari) * 100, 1) : 0;
+                    $color = $persen < 75 ? '#ff0000' : '#008000'; // Merah/Hijau
+                @endphp
+                <td colspan="2" style="font-weight: bold; text-align: center; color: {{ $color }}; background-color: #e9ecef; border: 1px solid #000000;">{{ $persen }}%</td>
+            @endforeach
+        </tr>
     </tbody>
 </table>

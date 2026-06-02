@@ -11,11 +11,10 @@
         .header { text-align: center; margin-bottom: 20px; }
         .page-break { page-break-after: always; }
 
-        /* Pewarnaan Sel Sama Seperti Rekap */
         .bg-libur { background-color: #cc0000; color: white; font-weight: bold; }
         .bg-izin { background-color: #ffc107; font-weight: bold; }
         .bg-alpa { background-color: #f8d7da; font-weight: bold; }
-        .bg-kurang { background-color: #fffacd; } /* Kuning Pucat untuk Telat/Kurang */
+        .bg-kurang { background-color: #fffacd; }
     </style>
 </head>
 <body>
@@ -36,7 +35,6 @@
             <tr>
                 <th rowspan="2" style="width: 10%;">Tanggal</th>
                 @foreach ($kelompokSiswa as $siswa)
-                    {{-- PERBAIKAN: colspan="2" DITAMBAHKAN KEMBALI DI SINI --}}
                     <th colspan="2">
                         {{ $siswa->nama_siswa }}
                         @if(!$sekolah)
@@ -69,7 +67,6 @@
                         @elseif ($presensi['status'] === 'Alpa')
                             <td colspan="2" class="bg-alpa">ALPA</td>
                         @else
-                            {{-- Jika Kurang Jam / Telat / Pulang Cepat, beri warna kuning pucat --}}
                             @php
                                 $isKurang = in_array($presensi['status'], ['Kurang', 'Telat', 'Pulang Cepat']);
                                 $bgClass = $isKurang ? 'bg-kurang' : '';
@@ -80,6 +77,26 @@
                     @endforeach
                 </tr>
             @endforeach
+
+            {{-- BARIS PERSENTASE KEHADIRAN DI BAWAH DETAIL --}}
+            <tr style="background-color: #e9ecef;">
+                <td style="font-weight: bold; text-align: right;">% Kehadiran:</td>
+                @foreach ($kelompokSiswa as $siswa)
+                    @php
+                        $totH = 0; $totI = 0; $totL = 0;
+                        $jmlHari = count($dates);
+                        foreach($dates as $tgl) {
+                            $pres = $pivotData[$tgl][$siswa->id];
+                            if($pres['status'] === 'LIBUR') $totL++;
+                            elseif($pres['status'] === 'Izin') $totI++;
+                            elseif(in_array($pres['status'], ['Hadir', 'Telat', 'Kurang', 'Pulang Cepat'])) $totH++;
+                        }
+                        $persen = $jmlHari > 0 ? round((($totH + $totI + $totL) / $jmlHari) * 100, 1) : 0;
+                        $color = $persen < 75 ? 'red' : 'green'; // Merah jika < 75%
+                    @endphp
+                    <td colspan="2" style="font-weight: bold; text-align: center; color: {{ $color }}; font-size: 12px;">{{ $persen }}%</td>
+                @endforeach
+            </tr>
         </tbody>
     </table>
 

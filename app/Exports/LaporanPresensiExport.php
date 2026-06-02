@@ -99,6 +99,7 @@ class LaporanPresensiExport implements FromView, ShouldAutoSize
                 'tanggalMulai' => $this->tanggalMulai,
                 'tanggalSelesai' => $this->tanggalSelesai,
                 'sekolah' => $sekolah,
+                'dates' => $dates, 
             ]);
         }
     }
