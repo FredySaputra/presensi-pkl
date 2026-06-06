@@ -58,19 +58,27 @@ class LaporanController extends Controller
      */
     public function getSiswaTanpaPresensi(Request $request)
     {
-        $request->validate(['tanggal' => 'required|date']);
-        $tanggal = $request->input('tanggal');
-        $bulanIni = Carbon::parse($tanggal)->month;
-        $tahunIni = Carbon::parse($tanggal)->year;
+        $request->validate([
+            'tanggal' => 'required|date',
+            'tanggal_akhir' => 'nullable|date'
+        ]);
 
-        $siswaSudahPresensiIds = Presensi::whereDate('tanggal', $tanggal)
+        $tanggalMulai = $request->input('tanggal');
+        $tanggalAkhir = $request->input('tanggal_akhir') ?? $tanggalMulai;
+
+        $bulanIni = Carbon::parse($tanggalMulai)->month;
+        $tahunIni = Carbon::parse($tanggalMulai)->year;
+
+        // Ambil ID siswa yang sudah punya presensi pada tanggal mulai
+        $siswaSudahPresensiIds = Presensi::whereDate('tanggal', $tanggalMulai)
             ->pluck('siswa_id')
             ->toArray();
 
+        // Kita ambil siswa yang aktif pada rentang tanggal tersebut dan belum presensi di tanggal mulai
         $siswaTersedia = Siswa::with('sekolah')
             ->whereNotIn('id', $siswaSudahPresensiIds)
-            ->where('mulai_pkl', '<=', $tanggal)
-            ->where('selesai_pkl', '>=', $tanggal)
+            ->where('mulai_pkl', '<=', $tanggalAkhir)
+            ->where('selesai_pkl', '>=', $tanggalMulai)
             ->orderBy('nama_siswa', 'asc')
             ->get()
             ->map(function ($siswa) use ($bulanIni, $tahunIni) {
@@ -94,48 +102,83 @@ class LaporanController extends Controller
     public function catatIzin(Request $request)
     {
         $request->validate([
-            'siswa_ids'   => 'required|array|min:1',
-            'siswa_ids.*' => 'exists:siswas,id',
-            'keterangan'  => 'required|string|max:255',
-            'tanggal'     => 'required|date',
-            'metode_izin' => 'required|in:WA,Surat',
+            'siswa_ids'     => 'required|array|min:1',
+            'siswa_ids.*'   => 'exists:siswas,id',
+            'keterangan'    => 'required|string|max:255',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_akhir' => 'required|date|after_or_equal:tanggal_mulai',
+            'metode_izin'   => 'required|in:WA,Surat',
         ]);
 
-        $bulanIni = Carbon::parse($request->tanggal)->month;
-        $tahunIni = Carbon::parse($request->tanggal)->year;
+        $tglMulai = Carbon::parse($request->tanggal_mulai);
+        $tglAkhir = Carbon::parse($request->tanggal_akhir);
+        
         $errorMessages = [];
+        $successCount = 0;
 
         foreach ($request->siswa_ids as $siswaId) {
-            if ($request->metode_izin == 'WA') {
-                $jumlahIzinWA = Presensi::where('siswa_id', $siswaId)
-                    ->whereMonth('tanggal', $bulanIni)
-                    ->whereYear('tanggal', $tahunIni)
-                    ->where('status', 'Izin')
-                    ->where('metode_izin', 'WA')
-                    ->count();
+            $siswa = Siswa::find($siswaId);
+            $currentDate = $tglMulai->copy();
 
-                if ($jumlahIzinWA >= 3) {
-                    $siswa = Siswa::find($siswaId);
-                    $errorMessages[] = "Siswa {$siswa->nama_siswa} sudah mencapai batas 3x izin via WhatsApp bulan ini. Harap gunakan metode Surat.";
+            while ($currentDate->lte($tglAkhir)) {
+                $dateString = $currentDate->toDateString();
+                $bulan = $currentDate->month;
+                $tahun = $currentDate->year;
+
+                // Analisis Bug: Pastikan tanggal ini masih dalam rentang PKL siswa
+                if ($dateString < $siswa->mulai_pkl || $dateString > $siswa->selesai_pkl) {
+                    $currentDate->addDay();
                     continue;
                 }
-            }
 
-            Presensi::updateOrCreate(
-                ['siswa_id' => $siswaId, 'tanggal' => $request->tanggal],
-                [
-                    'status' => 'Izin',
-                    'keterangan' => $request->keterangan,
-                    'jam_masuk' => null,
-                    'jam_pulang' => null,
-                    'metode_izin' => $request->metode_izin
-                ]
-            );
+                // Cek apakah hari ini adalah hari libur (Minggu atau Libur di Database)
+                $isSunday = $currentDate->isSunday();
+                $isLiburDatabase = \App\Models\HariLibur::where('tanggal', $dateString)
+                    ->where(function($query) use ($siswa) {
+                        $query->whereNull('sekolah_id')
+                              ->orWhere('sekolah_id', $siswa->sekolah_id);
+                    })->exists();
+
+                if ($isSunday || $isLiburDatabase) {
+                    $currentDate->addDay();
+                    continue;
+                }
+
+                if ($request->metode_izin == 'WA') {
+                    $jumlahIzinWA = Presensi::where('siswa_id', $siswaId)
+                        ->whereMonth('tanggal', $bulan)
+                        ->whereYear('tanggal', $tahun)
+                        ->where('status', 'Izin')
+                        ->where('metode_izin', 'WA')
+                        ->count();
+
+                    if ($jumlahIzinWA >= 3) {
+                        $errorMessages[] = "Siswa {$siswa->nama_siswa} pada tanggal {$dateString} tidak bisa dicatat (Batas 3x WA bulan ini tercapai).";
+                        $currentDate->addDay();
+                        continue;
+                    }
+                }
+
+                Presensi::updateOrCreate(
+                    ['siswa_id' => $siswaId, 'tanggal' => $dateString],
+                    [
+                        'status' => 'Izin',
+                        'keterangan' => $request->keterangan,
+                        'jam_masuk' => null,
+                        'jam_pulang' => null,
+                        'metode_izin' => $request->metode_izin
+                    ]
+                );
+                
+                $successCount++;
+                $currentDate->addDay();
+            }
         }
 
         if (count($errorMessages) > 0) {
+            $msg = $successCount > 0 ? 'Beberapa data berhasil disimpan.' : 'Gagal menyimpan data.';
             return redirect()->route('admin.laporan.index')
-                             ->with('success', 'Beberapa data berhasil disimpan.')
+                             ->with('success', $msg)
                              ->with('error_list', $errorMessages);
         }
 

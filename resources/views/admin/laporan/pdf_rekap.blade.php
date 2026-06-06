@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Rekap Presensi Umum</title>
+    
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 9px; }
         .table { width: 100%; border-collapse: collapse; margin-top: 10px; }

@@ -183,13 +183,19 @@
                     @csrf
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Tanggal Izin</label>
-                                    <input type="date" id="izin_tanggal" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
+                                    <label>Tanggal Mulai</label>
+                                    <input type="date" id="izin_tanggal_mulai" name="tanggal_mulai" class="form-control" value="{{ date('Y-m-d') }}" required>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Tanggal Akhir</label>
+                                    <input type="date" id="izin_tanggal_akhir" name="tanggal_akhir" class="form-control" value="{{ date('Y-m-d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Keterangan</label>
                                     <input type="text" name="keterangan" class="form-control" placeholder="Contoh: Sakit" required>
@@ -210,7 +216,7 @@
                         </div>
 
                         <hr>
-                        <label>Pilih Siswa (Hanya yang belum presensi):</label>
+                        <label>Pilih Siswa (Hanya yang sedang aktif PKL):</label>
                         <input type="text" id="searchIzin" class="form-control mb-2" placeholder="Cari nama siswa...">
                         <div id="loadingIzin" class="text-center d-none"><div class="spinner-border spinner-border-sm"></div> Memuat...</div>
                         <div id="izin-list" style="height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
@@ -267,11 +273,22 @@
 $(document).ready(function() {
 
     function fetchIzinStudents() {
-        let tgl = $('#izin_tanggal').val();
+        let tglMulai = $('#izin_tanggal_mulai').val();
+        let tglAkhir = $('#izin_tanggal_akhir').val();
+
+        // Pastikan tanggal akhir tidak lebih kecil dari tanggal mulai
+        if (tglAkhir < tglMulai) {
+            $('#izin_tanggal_akhir').val(tglMulai);
+            tglAkhir = tglMulai;
+        }
+        
+        // Set min attribute untuk tanggal akhir
+        $('#izin_tanggal_akhir').attr('min', tglMulai);
+
         $('#loadingIzin').removeClass('d-none');
         $('#izin-list').empty();
 
-        $.get('{{ route("admin.laporan.getSiswa") }}', { tanggal: tgl }, function(data) {
+        $.get('{{ route("admin.laporan.getSiswa") }}', { tanggal: tglMulai, tanggal_akhir: tglAkhir }, function(data) {
             $('#loadingIzin').addClass('d-none');
             if(data.length > 0) {
                 data.forEach(s => {
@@ -294,12 +311,12 @@ $(document).ready(function() {
                     `);
                 });
             } else {
-                $('#izin-list').html('<p class="text-muted text-center pt-3">Tidak ada siswa yang bisa diizinkan tanggal ini.</p>');
+                $('#izin-list').html('<p class="text-muted text-center pt-3">Tidak ada siswa yang aktif pada rentang tanggal ini.</p>');
             }
         });
     }
 
-    $('#izin_tanggal').on('change', fetchIzinStudents);
+    $('#izin_tanggal_mulai, #izin_tanggal_akhir').on('change', fetchIzinStudents);
     $('#izinModal').on('shown.bs.modal', fetchIzinStudents);
 
     $('#searchIzin').on('keyup', function() {
