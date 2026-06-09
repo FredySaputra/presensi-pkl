@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'monitoring' => [
+        'url' => env('MONITORING_LIVE_URL'),
+        'key' => env('MONITORING_API_KEY'),
+    ],
+
 ];
