@@ -8,6 +8,7 @@ use App\Models\Sekolah;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use App\Services\SyncToLiveService;
 
 class HariLiburController extends Controller
 {
@@ -44,7 +45,7 @@ class HariLiburController extends Controller
         return response()->json($events);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SyncToLiveService $syncService)
     {
         $request->validate([
             'tanggal_mulai'   => 'required|date',
@@ -61,12 +62,19 @@ class HariLiburController extends Controller
             );
         }
 
+        // Sync to Live Monitoring
+        $syncService->syncHolidays();
+
         return redirect()->route('admin.harilibur.index')->with('success', 'Hari libur berhasil ditambahkan.');
     }
 
-    public function destroy(HariLibur $harilibur)
+    public function destroy(HariLibur $harilibur, SyncToLiveService $syncService)
     {
         $harilibur->delete();
+
+        // Sync to Live Monitoring (Send full list)
+        $syncService->syncHolidays();
+
         return response()->json(['success' => true]);
     }
 }

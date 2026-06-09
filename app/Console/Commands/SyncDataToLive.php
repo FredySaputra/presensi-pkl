@@ -42,11 +42,11 @@ class SyncDataToLive extends Command
             $this->error('Hari libur gagal disinkronkan.');
         }
 
-        $this->comment('3. Sinkronisasi Data Kehadiran (Alpa)...');
+        $this->comment('3. Sinkronisasi Data Kehadiran (Hadir, Izin, Sakit, Alpa)...');
         if ($syncService->syncAttendance()) {
-            $this->info('Kehadiran (alpa) berhasil disinkronkan.');
+            $this->info('Kehadiran berhasil disinkronkan.');
         } else {
-            $this->error('Kehadiran (alpa) gagal disinkronkan.');
+            $this->error('Kehadiran gagal disinkronkan.');
         }
 
         $this->info('Sinkronisasi selesai.');

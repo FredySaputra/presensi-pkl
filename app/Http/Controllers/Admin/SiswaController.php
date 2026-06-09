@@ -7,6 +7,7 @@ use App\Models\Sekolah;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Services\SyncToLiveService;
 
 class SiswaController extends Controller
 {
@@ -56,7 +57,7 @@ class SiswaController extends Controller
         return view('admin.siswa.create', compact('sekolahs'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SyncToLiveService $syncService)
     {
         $request->validate([
             'sekolah_id' => 'required|exists:sekolahs,id',
@@ -76,6 +77,9 @@ class SiswaController extends Controller
             ]);
         }
 
+        // Sync to Live Monitoring
+        $syncService->syncStudents();
+
         return redirect()->route('admin.siswa.index')->with('success', 'Berhasil menambahkan sekelompok siswa PKL.');
     }
 
@@ -85,7 +89,7 @@ class SiswaController extends Controller
         return view('admin.siswa.edit', compact('siswa', 'sekolahs'));
     }
 
-    public function update(Request $request, Siswa $siswa)
+    public function update(Request $request, Siswa $siswa, SyncToLiveService $syncService)
     {
         $request->validate([
             'nama_siswa'  => 'required|string|max:255',
@@ -96,13 +100,20 @@ class SiswaController extends Controller
 
         $siswa->update($request->all());
 
+        // Sync to Live Monitoring
+        $syncService->syncStudents();
+
         return redirect()->route('admin.siswa.index')
                          ->with('success', 'Data siswa berhasil diperbarui.');
     }
 
-    public function destroy(Siswa $siswa)
+    public function destroy(Siswa $siswa, SyncToLiveService $syncService)
     {
         $siswa->delete();
+
+        // Sync to Live Monitoring
+        $syncService->syncStudents();
+
         return redirect()->route('admin.siswa.index')
                          ->with('success', 'Data siswa berhasil dihapus.');
     }

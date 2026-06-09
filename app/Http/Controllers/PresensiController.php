@@ -12,6 +12,7 @@ use App\Models\Siswa;
 use App\Models\Sekolah;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Services\SyncToLiveService;
 
 class PresensiController extends Controller
 {
@@ -40,7 +41,7 @@ class PresensiController extends Controller
     /**
      * Memproses presensi MASUK (Dari Form Sebelah Kiri).
      */
-    public function storeManual(Request $request)
+    public function storeManual(Request $request, SyncToLiveService $syncService)
     {
         $request->validate(['siswa_id' => 'required|exists:siswas,id']);
         $siswa = Siswa::with('sekolah')->find($request->siswa_id);
@@ -62,13 +63,16 @@ class PresensiController extends Controller
         $menitTelat = $isTelat ? $batasMasuk->diffInMinutes($now) : null;
         $statusMasuk = $isTelat ? 'Telat' : 'Hadir';
 
-        Presensi::create([
+        $presensi = Presensi::create([
             'siswa_id' => $siswa->id,
             'tanggal' => $today->toDateString(),
             'jam_masuk' => $now->toTimeString(),
             'status' => $statusMasuk,
             'menit_telat' => $menitTelat
         ]);
+
+        // Real-time sync to Live Monitoring
+        $syncService->syncAttendance(collect([$presensi]));
 
         $statusClass = $isTelat ? 'warning' : 'success';
 
@@ -88,7 +92,7 @@ class PresensiController extends Controller
     /**
      * Memproses presensi PULANG (Dari Tombol Panel Kanan).
      */
-    public function storePulang(Request $request)
+    public function storePulang(Request $request, SyncToLiveService $syncService)
     {
         $request->validate(['siswa_id' => 'required|exists:siswas,id']);
         $siswa = Siswa::with('sekolah')->find($request->siswa_id);
@@ -123,6 +127,9 @@ class PresensiController extends Controller
         }
 
         $presensi->save();
+
+        // Real-time sync to Live Monitoring
+        $syncService->syncAttendance(collect([$presensi]));
 
         $data = $this->getAttendanceDataLogic();
         return response()->json([
@@ -211,7 +218,7 @@ class PresensiController extends Controller
     /**
      * Memperbarui data presensi pulang dengan waktu SAAT INI (Real-time).
      */
-    public function updatePulangManual(Request $request)
+    public function updatePulangManual(Request $request, SyncToLiveService $syncService)
     {
         $request->validate([
             'presensi_id' => 'required|exists:presensis,id',
@@ -247,6 +254,9 @@ class PresensiController extends Controller
         }
 
         $presensi->save();
+
+        // Real-time sync to Live Monitoring
+        $syncService->syncAttendance(collect([$presensi]));
 
         $data = $this->getAttendanceDataLogic();
         return response()->json([

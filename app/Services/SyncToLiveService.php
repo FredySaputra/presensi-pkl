@@ -25,15 +25,15 @@ class SyncToLiveService
     public function syncStudents()
     {
         $students = Siswa::with('sekolah')->get()->map(fn($s) => [
-            'external_id' => $s->id,
+            'external_id' => (string)$s->id,
             'name' => $s->nama_siswa,
             'school_name' => $s->sekolah->nama_sekolah ?? 'N/A',
-            'lab_name' => env('LAB_NAME', 'Lab ICT'),
+            'status' => 'active', // Default as Siswa model doesn't have status field
             'start_pkl' => $s->mulai_pkl,
             'end_pkl' => $s->selesai_pkl,
         ]);
 
-        return $this->sendRequest('/api/sync/students', ['students' => $students]);
+        return $this->sendRequest('/api/sync-students', ['students' => $students]);
     }
 
     /**
@@ -46,21 +46,45 @@ class SyncToLiveService
             'description' => $l->keterangan,
         ]);
 
-        return $this->sendRequest('/api/sync/holidays', ['holidays' => $holidays]);
+        return $this->sendRequest('/api/sync-holidays', ['holidays' => $holidays]);
     }
 
     /**
-     * Sinkronisasi Kehadiran (Alpa)
+     * Sinkronisasi Kehadiran
+     * 
+     * @param \Illuminate\Support\Collection|null $presensis
      */
-    public function syncAttendance()
+    public function syncAttendance($presensis = null)
     {
-        $attendance = Presensi::where('status', 'alpa')->get()->map(fn($a) => [
-            'external_id' => $a->siswa_id,
-            'date' => $a->tanggal,
-            'status' => 'alpa',
-        ]);
+        if (!$presensis) {
+            $presensis = Presensi::whereDate('tanggal', now()->toDateString())->get();
+        }
 
-        return $this->sendRequest('/api/sync/attendance', ['attendance' => $attendance]);
+        $attendance = $presensis->map(function($a) {
+            // Map local status to guide status
+            $statusMap = [
+                'Hadir'        => 'hadir',
+                'Telat'        => 'hadir',
+                'Pulang Cepat' => 'hadir',
+                'Izin'         => 'izin',
+                'Sakit'        => 'sakit',
+                'Alpa'         => 'alpa',
+                'Kurang'       => 'alpa', // Assumed 'Kurang' is equivalent to alpa for monitoring
+            ];
+
+            return [
+                'external_id' => (string)$a->siswa_id,
+                'date' => $a->tanggal,
+                'status' => $statusMap[$a->status] ?? 'hadir',
+                'description' => $a->keterangan ?? '-',
+            ];
+        });
+
+        if ($attendance->isEmpty()) {
+            return true;
+        }
+
+        return $this->sendRequest('/api/sync-attendance', ['attendance' => $attendance]);
     }
 
     /**
@@ -69,7 +93,7 @@ class SyncToLiveService
     protected function sendRequest($endpoint, $data)
     {
         if (!$this->url || !$this->key) {
-            Log::error("SyncToLive: URL atau API Key belum dikonfigurasi di .env");
+            Log::warning("SyncToLive: URL atau API Key belum dikonfigurasi di .env. Request ke $endpoint dibatalkan.");
             return false;
         }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Presensi;
 use Illuminate\Http\Request;
+use App\Services\SyncToLiveService;
 
 class PresensiController extends Controller
 {
@@ -21,10 +22,10 @@ class PresensiController extends Controller
     /**
      * Menyimpan pembaruan data presensi.
      */
-    public function update(Request $request, Presensi $presensi)
+    public function update(Request $request, Presensi $presensi, SyncToLiveService $syncService)
     {
         $request->validate([
-            'status'      => 'required|string|in:Hadir,Izin,Kurang,Pulang Cepat,Telat,Alpa',
+            'status'      => 'required|string|in:Hadir,Izin,Sakit,Kurang,Pulang Cepat,Telat,Alpa',
             'jam_masuk'   => 'nullable|date_format:H:i',
             'jam_pulang'  => 'nullable|date_format:H:i|after_or_equal:jam_masuk',
             'keterangan'  => 'nullable|string|max:255',
@@ -38,6 +39,9 @@ class PresensiController extends Controller
             'keterangan'  => $request->keterangan,
             'metode_izin' => $request->status === 'Izin' ? $request->metode_izin : null, 
         ]);
+
+        // Real-time sync to Live Monitoring
+        $syncService->syncAttendance(collect([$presensi]));
 
         return redirect()->route('admin.laporan.index')
                          ->with('success', 'Data presensi siswa berhasil diperbarui.');
