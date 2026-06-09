@@ -33,7 +33,7 @@ class SyncToLiveService
             'end_pkl' => $s->selesai_pkl,
         ]);
 
-        return $this->sendRequest('/api/sync-students', ['students' => $students]);
+        return $this->sendRequest('/api/sync/students', ['students' => $students]);
     }
 
     /**
@@ -46,7 +46,7 @@ class SyncToLiveService
             'description' => $l->keterangan,
         ]);
 
-        return $this->sendRequest('/api/sync-holidays', ['holidays' => $holidays]);
+        return $this->sendRequest('/api/sync/holidays', ['holidays' => $holidays]);
     }
 
     /**
@@ -84,7 +84,7 @@ class SyncToLiveService
             return true;
         }
 
-        return $this->sendRequest('/api/sync-attendance', ['attendance' => $attendance]);
+        return $this->sendRequest('/api/sync/attendance', ['attendance' => $attendance]);
     }
 
     /**

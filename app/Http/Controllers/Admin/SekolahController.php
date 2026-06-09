@@ -8,6 +8,7 @@ use App\Models\Sekolah;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Services\SyncToLiveService;
 
 class SekolahController extends Controller
 {
@@ -22,7 +23,7 @@ class SekolahController extends Controller
         return view('admin.sekolah.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SyncToLiveService $syncService)
     {
         $request->validate([
             'nama_sekolah' => [
@@ -41,6 +42,10 @@ class SekolahController extends Controller
 
         $this->generateJadwalLibur($sekolah);
 
+        // Sync to Live Monitoring
+        $syncService->syncStudents();
+        $syncService->syncHolidays();
+
         return redirect()->route('admin.sekolah.index')
                          ->with('success', 'Data sekolah berhasil ditambahkan.');
     }
@@ -50,7 +55,7 @@ class SekolahController extends Controller
         return view('admin.sekolah.edit', compact('sekolah'));
     }
 
-    public function update(Request $request, Sekolah $sekolah)
+    public function update(Request $request, Sekolah $sekolah, SyncToLiveService $syncService)
     {
         $request->validate([
             'nama_sekolah' => [
@@ -69,13 +74,22 @@ class SekolahController extends Controller
 
         $this->generateJadwalLibur($sekolah);
 
+        // Sync to Live Monitoring
+        $syncService->syncStudents();
+        $syncService->syncHolidays();
+
         return redirect()->route('admin.sekolah.index')
                          ->with('success', 'Data sekolah berhasil diperbarui.');
     }
 
-    public function destroy(Sekolah $sekolah)
+    public function destroy(Sekolah $sekolah, SyncToLiveService $syncService)
     {
         $sekolah->delete();
+
+        // Sync to Live Monitoring
+        $syncService->syncStudents();
+        $syncService->syncHolidays();
+
         return redirect()->route('admin.sekolah.index')
                          ->with('success', 'Data sekolah berhasil dihapus.');
     }

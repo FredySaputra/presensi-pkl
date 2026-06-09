@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\SyncToLiveService;
 
 class LaporanController extends Controller
 {
@@ -99,7 +100,7 @@ class LaporanController extends Controller
     /**
      * Mencatat izin untuk banyak siswa sekaligus (Massal via Checkbox).
      */
-    public function catatIzin(Request $request)
+    public function catatIzin(Request $request, SyncToLiveService $syncService)
     {
         $request->validate([
             'siswa_ids'     => 'required|array|min:1',
@@ -115,6 +116,7 @@ class LaporanController extends Controller
         
         $errorMessages = [];
         $successCount = 0;
+        $syncedPresensis = collect();
 
         foreach ($request->siswa_ids as $siswaId) {
             $siswa = Siswa::find($siswaId);
@@ -159,7 +161,7 @@ class LaporanController extends Controller
                     }
                 }
 
-                Presensi::updateOrCreate(
+                $presensi = Presensi::updateOrCreate(
                     ['siswa_id' => $siswaId, 'tanggal' => $dateString],
                     [
                         'status' => 'Izin',
@@ -170,9 +172,15 @@ class LaporanController extends Controller
                     ]
                 );
                 
+                $syncedPresensis->push($presensi);
                 $successCount++;
                 $currentDate->addDay();
             }
+        }
+
+        // Trigger Sync
+        if ($syncedPresensis->isNotEmpty()) {
+            $syncService->syncAttendance($syncedPresensis);
         }
 
         if (count($errorMessages) > 0) {
@@ -188,7 +196,7 @@ class LaporanController extends Controller
     /**
      * Mencatat presensi manual untuk banyak siswa sekaligus (Massal via Checkbox).
      */
-    public function storeManualPresence(Request $request)
+    public function storeManualPresence(Request $request, SyncToLiveService $syncService)
     {
         $request->validate([
             'siswa_ids'   => 'required|array|min:1',
@@ -221,8 +229,9 @@ class LaporanController extends Controller
             }
         }
 
+        $syncedPresensis = collect();
         foreach ($validSiswaIds as $siswaId) {
-            Presensi::updateOrCreate(
+            $presensi = Presensi::updateOrCreate(
                 ['siswa_id' => $siswaId, 'tanggal' => $request->tanggal],
                 [
                     'jam_masuk' => $request->jam_masuk,
@@ -231,6 +240,12 @@ class LaporanController extends Controller
                     'keterangan' => 'Input Manual'
                 ]
             );
+            $syncedPresensis->push($presensi);
+        }
+
+        // Trigger Sync
+        if ($syncedPresensis->isNotEmpty()) {
+            $syncService->syncAttendance($syncedPresensis);
         }
 
         $jumlahTersimpan = count($validSiswaIds);
