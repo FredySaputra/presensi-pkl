@@ -25,16 +25,26 @@ class SyncToLiveService
      */
     public function syncStudents()
     {
-        $students = Siswa::with('sekolah')->get()->map(fn($s) => [
-            'external_id' => (string)$s->id,
-            'name' => $s->nama_siswa,
-            'school_name' => $s->sekolah->nama_sekolah ?? 'N/A',
-            'status' => 'active',
-            'start_pkl' => $s->mulai_pkl,
-            'end_pkl' => $s->selesai_pkl,
-        ]);
+        try {
+            $students = Siswa::with('sekolah')->get()->map(fn($s) => [
+                'external_id' => (string)$s->id,
+                'name' => $s->nama_siswa,
+                'school_name' => $s->sekolah->nama_sekolah ?? 'N/A',
+                'status' => 'active',
+                'start_pkl' => $s->mulai_pkl,
+                'end_pkl' => $s->selesai_pkl,
+            ]);
 
-        return $this->sendRequest('/api/sync/students', ['students' => $students], 'students');
+            if ($students->isEmpty()) {
+                Log::info("SyncToLive: Tidak ada data siswa untuk dikirim.");
+                return true;
+            }
+
+            return $this->sendRequest('/api/sync/students', ['students' => $students], 'students');
+        } catch (\Exception $e) {
+            Log::error("SyncToLive Siswa Error: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -42,12 +52,21 @@ class SyncToLiveService
      */
     public function syncHolidays()
     {
-        $holidays = HariLibur::all()->map(fn($l) => [
-            'date' => $l->tanggal,
-            'description' => $l->keterangan,
-        ]);
+        try {
+            $holidays = HariLibur::all()->map(fn($l) => [
+                'date' => $l->tanggal,
+                'description' => $l->keterangan,
+            ]);
 
-        return $this->sendRequest('/api/sync/holidays', ['holidays' => $holidays], 'holidays');
+            if ($holidays->isEmpty()) {
+                return true;
+            }
+
+            return $this->sendRequest('/api/sync/holidays', ['holidays' => $holidays], 'holidays');
+        } catch (\Exception $e) {
+            Log::error("SyncToLive Libur Error: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -55,47 +74,57 @@ class SyncToLiveService
      */
     public function syncAttendance($presensis = null)
     {
-        if (!$presensis) {
-            $presensis = Presensi::whereDate('tanggal', now()->toDateString())->get();
+        try {
+            if (!$presensis) {
+                $presensis = Presensi::whereDate('tanggal', now()->toDateString())->get();
+            }
+
+            $attendance = $presensis->map(function($a) {
+                $statusMap = [
+                    'Hadir'        => 'hadir',
+                    'Telat'        => 'hadir',
+                    'Pulang Cepat' => 'hadir',
+                    'Izin'         => 'izin',
+                    'Sakit'        => 'sakit',
+                    'Alpa'         => 'alpa',
+                    'Kurang'       => 'alpa',
+                ];
+
+                return [
+                    'external_id' => (string)$a->siswa_id,
+                    'date' => $a->tanggal,
+                    'status' => $statusMap[$a->status] ?? 'hadir',
+                    'description' => $a->keterangan ?? '-',
+                ];
+            });
+
+            if ($attendance->isEmpty()) {
+                Log::info("SyncToLive: Tidak ada data kehadiran hari ini.");
+                return true;
+            }
+
+            return $this->sendRequest('/api/sync/attendance', ['attendance' => $attendance], 'attendance');
+        } catch (\Exception $e) {
+            Log::error("SyncToLive Kehadiran Error: " . $e->getMessage());
+            return false;
         }
-
-        $attendance = $presensis->map(function($a) {
-            $statusMap = [
-                'Hadir'        => 'hadir',
-                'Telat'        => 'hadir',
-                'Pulang Cepat' => 'hadir',
-                'Izin'         => 'izin',
-                'Sakit'        => 'sakit',
-                'Alpa'         => 'alpa',
-                'Kurang'       => 'alpa',
-            ];
-
-            return [
-                'external_id' => (string)$a->siswa_id,
-                'date' => $a->tanggal,
-                'status' => $statusMap[$a->status] ?? 'hadir',
-                'description' => $a->keterangan ?? '-',
-            ];
-        });
-
-        if ($attendance->isEmpty()) {
-            return true;
-        }
-
-        return $this->sendRequest('/api/sync/attendance', ['attendance' => $attendance], 'attendance');
     }
 
     /**
-     * Method untuk mengirim request (Sekarang mendukung FTP untuk InfinityFree)
+     * Method untuk mengirim request
      */
     protected function sendRequest($endpoint, $data, $type)
     {
-        // Strategi 1: Sinkronisasi via FTP (Solusi untuk InfinityFree)
-        if (config('filesystems.disks.ftp_monitoring.host') && config('filesystems.disks.ftp_monitoring.username') !== 'isi_username_ftp_anda') {
+        // Cek jika FTP dikonfigurasi
+        $ftpHost = config('filesystems.disks.ftp_monitoring.host');
+        $ftpUser = config('filesystems.disks.ftp_monitoring.username');
+
+        if ($ftpHost && $ftpUser && $ftpUser !== 'isi_username_ftp_anda') {
+            Log::info("SyncToLive: Mencoba sinkronisasi via FTP ($type)...");
             return $this->uploadViaFtp($type, $data);
         }
 
-        // Fallback ke HTTP (Strategi 2 / Normal)
+        Log::info("SyncToLive: Mencoba sinkronisasi via HTTP ($type)...");
         if (!$this->url || !$this->key) {
             Log::warning("SyncToLive: URL atau API Key belum dikonfigurasi.");
             return false;
@@ -114,10 +143,10 @@ class SyncToLiveService
                 return true;
             }
 
-            Log::error("SyncToLive HTTP Gagal: " . $response->body());
+            Log::error("SyncToLive HTTP Gagal: (" . $response->status() . ") " . $response->body());
             return false;
         } catch (\Exception $e) {
-            Log::error("SyncToLive Exception: " . $e->getMessage());
+            Log::error("SyncToLive HTTP Exception: " . $e->getMessage());
             return false;
         }
     }
@@ -129,19 +158,26 @@ class SyncToLiveService
     {
         try {
             $fileName = "sync_{$type}_" . date('Ymd_His') . ".json";
-            $content = json_encode($data);
+            $content = json_encode($data, JSON_PRETTY_PRINT);
 
-            $uploaded = Storage::disk('ftp_monitoring')->put($fileName, $content);
+            $disk = Storage::disk('ftp_monitoring');
+            
+            // Coba simpan file
+            $uploaded = $disk->put($fileName, $content);
 
             if ($uploaded) {
-                Log::info("SyncToLive FTP Sukses: $fileName");
+                Log::info("SyncToLive FTP Berhasil: $fileName");
                 return true;
             }
 
-            Log::error("SyncToLive FTP Gagal upload: $fileName");
+            Log::error("SyncToLive FTP Gagal: Gagal menulis file $fileName ke server.");
             return false;
         } catch (\Exception $e) {
             Log::error("SyncToLive FTP Exception: " . $e->getMessage());
+            // Berikan detail lebih lanjut jika itu adalah error koneksi
+            if (str_contains($e->getMessage(), 'Could not connect')) {
+                Log::error("Detail: Koneksi FTP ditolak atau host tidak ditemukan.");
+            }
             return false;
         }
     }
