@@ -60,6 +60,18 @@ return [
             'report' => false,
         ],
 
+        'ftp_monitoring' => [
+            'driver' => 'ftp',
+            'host' => env('FTP_MONITORING_HOST'),
+            'username' => env('FTP_MONITORING_USERNAME'),
+            'password' => env('FTP_MONITORING_PASSWORD'),
+            'port' => (int) env('FTP_MONITORING_PORT', 21),
+            'root' => env('FTP_MONITORING_ROOT', 'htdocs/laravel/storage/app/sync'),
+            'passive' => true,
+            'ssl' => false,
+            'timeout' => 30,
+        ],
+
     ],
 
     /*
