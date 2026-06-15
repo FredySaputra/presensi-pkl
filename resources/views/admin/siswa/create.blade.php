@@ -81,6 +81,35 @@
 $(document).ready(function() {
     let rowCount = 1;
 
+    // Logic for Date Range Validation
+    const mulaiPkl = $('input[name="mulai_pkl"]');
+    const selesaiPkl = $('input[name="selesai_pkl"]');
+
+    function updateSelesaiPklMin() {
+        const mulaiValue = mulaiPkl.val();
+        if (mulaiValue) {
+            selesaiPkl.prop('disabled', false);
+            selesaiPkl.attr('min', mulaiValue);
+            
+            // If selesai_pkl has a value and it's less than mulai_pkl, clear it
+            if (selesaiPkl.val() && selesaiPkl.val() < mulaiValue) {
+                selesaiPkl.val('');
+            }
+        } else {
+            selesaiPkl.prop('disabled', true);
+            selesaiPkl.val('');
+        }
+    }
+
+    mulaiPkl.on('change', updateSelesaiPklMin);
+
+    // Initial check for old values or initial state
+    if (mulaiPkl.val()) {
+        selesaiPkl.attr('min', mulaiPkl.val());
+    } else {
+        selesaiPkl.prop('disabled', true);
+    }
+
     // Fungsi Tambah Baris
     $('#addRow').on('click', function() {
         let newRow = `

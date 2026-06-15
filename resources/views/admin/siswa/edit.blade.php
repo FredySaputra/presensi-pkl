@@ -61,3 +61,36 @@
         </div>
     </div>
 @stop
+
+@section('js')
+<script>
+$(document).ready(function() {
+    const mulaiPkl = $('input[name="mulai_pkl"]');
+    const selesaiPkl = $('input[name="selesai_pkl"]');
+
+    function updateSelesaiPklMin() {
+        const mulaiValue = mulaiPkl.val();
+        if (mulaiValue) {
+            selesaiPkl.prop('disabled', false);
+            selesaiPkl.attr('min', mulaiValue);
+            
+            if (selesaiPkl.val() && selesaiPkl.val() < mulaiValue) {
+                selesaiPkl.val('');
+            }
+        } else {
+            selesaiPkl.prop('disabled', true);
+            selesaiPkl.val('');
+        }
+    }
+
+    mulaiPkl.on('change', updateSelesaiPklMin);
+
+    // Initial state
+    if (mulaiPkl.val()) {
+        selesaiPkl.attr('min', mulaiPkl.val());
+    } else {
+        selesaiPkl.prop('disabled', true);
+    }
+});
+</script>
+@stop

@@ -74,6 +74,30 @@
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
 
+            // Logic for Date Range Validation in Modal
+            const mulaiLibur = $('#input_tanggal_mulai');
+            const selesaiLibur = $('#input_tanggal_selesai');
+
+            function updateSelesaiLiburMin() {
+                const mulaiValue = mulaiLibur.val();
+                if (mulaiValue) {
+                    selesaiLibur.prop('disabled', false);
+                    selesaiLibur.attr('min', mulaiValue);
+                    
+                    if (selesaiLibur.val() && selesaiLibur.val() < mulaiValue) {
+                        selesaiLibur.val(mulaiValue);
+                    }
+                } else {
+                    selesaiLibur.prop('disabled', true);
+                    selesaiLibur.val('');
+                }
+            }
+
+            mulaiLibur.on('change', updateSelesaiLiburMin);
+
+            // Initial state (modal closed/reset)
+            selesaiLibur.prop('disabled', true);
+
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'id', // Bahasa Indonesia
@@ -109,8 +133,11 @@
                     }
 
                     // Set otomatis input tanggal mulai & selesai sesuai kotak yang diklik
-                    document.getElementById('input_tanggal_mulai').value = info.dateStr;
-                    document.getElementById('input_tanggal_selesai').value = info.dateStr;
+                    mulaiLibur.val(info.dateStr);
+                    selesaiLibur.val(info.dateStr);
+                    
+                    // Trigger validation logic
+                    updateSelesaiLiburMin();
 
                     $('#modalTambahLibur').modal('show');
                 },
