@@ -40,6 +40,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     // Dashboard: Statistik Kehadiran Hari Ini
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Sinkronisasi via Browser
+    Route::get('/sync-live', [App\Http\Controllers\Admin\SyncLiveController::class, 'syncViaBrowser'])->name('sync-live');
+
     // Manajemen Master Data Sekolah
     Route::resource('sekolah', SekolahController::class);
 
