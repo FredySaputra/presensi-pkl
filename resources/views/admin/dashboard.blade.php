@@ -16,7 +16,7 @@
     @endif
 
     <div class="mb-3 text-right">
-        <a href="{{ route('sync-live') }}" class="btn btn-primary">
+        <a href="{{ route('admin.sync-live') }}" class="btn btn-primary">
             <i class="fas fa-sync"></i> Sinkronisasi Data ke Server (Infinity Free)
         </a>
     </div>
