@@ -26,8 +26,6 @@
             </div>
             <div class="progress-text" id="progressText">0%</div>
         </div>
-        
-        <iframe id="receiverFrame" src="{{ rtrim($targetUrl, '/all') . '/receiver' }}" style="display:none;"></iframe>
     </div>
 
     <script>
@@ -39,6 +37,7 @@
 
         var targetOrigin = new URL("{{ $targetUrl }}").origin;
         var hasSentData = false;
+        var syncPopup = null;
         
         function updateProgress(percent, text) {
             document.getElementById('progressBar').style.width = percent + '%';
@@ -48,6 +47,18 @@
             }
         }
 
+        // Buka popup ketika halaman siap
+        window.onload = function() {
+            updateProgress(2, "Membuka jalur aman ke server...");
+            syncPopup = window.open("{{ rtrim($targetUrl, '/all') . '/receiver' }}", "SyncServer", "width=500,height=500,left=100,top=100");
+            
+            if (!syncPopup || syncPopup.closed || typeof syncPopup.closed == 'undefined') {
+                updateProgress(0, "Gagal: Popup diblokir oleh browser. Harap izinkan popup untuk situs ini.");
+                document.getElementById('statusText').style.color = "red";
+                document.getElementById('progressBar').style.backgroundColor = "red";
+            }
+        };
+
         window.addEventListener("message", function(event) {
             if (event.origin !== targetOrigin) return;
 
@@ -55,11 +66,10 @@
                 if (event.data.type === "ready" && !hasSentData) {
                     hasSentData = true;
                     updateProgress(5, "Memulai pengunggahan data...");
-                    document.getElementById('receiverFrame').contentWindow.postMessage(payloadObj, targetOrigin);
+                    syncPopup.postMessage(payloadObj, targetOrigin);
                 } 
                 else if (event.data.type === "progress") {
                     if (event.data.stage === "uploading") {
-                        // Upload progress scales from 5% to 80%
                         var visualPercent = 5 + Math.round(event.data.percent * 0.75);
                         updateProgress(visualPercent, "Mengunggah data ke server...");
                     } else if (event.data.stage === "processing_done") {
@@ -68,6 +78,7 @@
                 }
                 else if (event.data.type === "done") {
                     updateProgress(100, "Selesai! Mengalihkan...");
+                    if (syncPopup) syncPopup.close(); // Tutup popup otomatis
                     setTimeout(function() {
                         window.location.href = event.data.redirect + (event.data.redirect.indexOf('?') > -1 ? '&' : '?') + 'sync_success=1';
                     }, 500);
@@ -79,15 +90,6 @@
                 }
             }
         });
-
-        // Fallback jika event ready tidak diterima (misal terhalang challenge Infinity Free sebentar)
-        setTimeout(function() {
-            if (!hasSentData) {
-                hasSentData = true;
-                updateProgress(5, "Memulai pengunggahan data...");
-                document.getElementById('receiverFrame').contentWindow.postMessage(payloadObj, targetOrigin);
-            }
-        }, 5000); 
     </script>
 </body>
 </html>
