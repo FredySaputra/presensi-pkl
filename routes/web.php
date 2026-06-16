@@ -71,6 +71,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::resource('presensi', AdminPresensiController::class)->only(['edit', 'update']);
 
     // Manajemen Hari Libur (Kalender)
+    Route::post('/harilibur/fetch-auto', [App\Http\Controllers\Admin\HariLiburController::class, 'fetchAuto'])->name('harilibur.fetchAuto');
     Route::get('/harilibur/events', [App\Http\Controllers\Admin\HariLiburController::class, 'getEvents'])->name('harilibur.events');
     Route::resource('harilibur', App\Http\Controllers\Admin\HariLiburController::class)->except(['create', 'show', 'edit', 'update']);
 });

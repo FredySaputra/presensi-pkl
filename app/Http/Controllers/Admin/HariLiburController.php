@@ -77,4 +77,52 @@ class HariLiburController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function fetchAuto()
+    {
+        $url = "https://raw.githubusercontent.com/guangrei/APIHariLibur_V2/main/calendar.json";
+        $response = @file_get_contents($url);
+        
+        if (!$response) {
+            return redirect()->back()->with('error', 'Gagal menghubungi server penyedia Hari Libur.');
+        }
+
+        $data = json_decode($response, true);
+        if (!$data) {
+            return redirect()->back()->with('error', 'Format data Hari Libur tidak valid.');
+        }
+
+        $currentYear = date('Y');
+        $added = 0;
+
+        foreach ($data as $date => $info) {
+            // Hanya ambil tahun ini dan tahun depan
+            if (strpos($date, $currentYear . '-') === 0 || strpos($date, ($currentYear + 1) . '-') === 0) {
+                
+                $descriptions = implode(" ", $info['description'] ?? []);
+                $summaries = implode(" ", $info['summary'] ?? []);
+
+                // Hanya ambil jika "Hari libur nasional" dan BUKAN "Cuti Bersama"
+                if (stripos($descriptions, 'Hari libur nasional') !== false && stripos($summaries, 'Cuti') === false) {
+                    
+                    $keterangan = $info['summary'][0] ?? 'Hari Libur Nasional';
+
+                    $holiday = HariLibur::firstOrCreate(
+                        ['tanggal' => $date],
+                        ['keterangan' => $keterangan]
+                    );
+
+                    if ($holiday->wasRecentlyCreated) {
+                        $added++;
+                    }
+                }
+            }
+        }
+
+        if ($added > 0) {
+            return redirect()->route('admin.harilibur.index')->with('success', "$added Hari libur nasional berhasil ditarik dan ditambahkan otomatis.");
+        } else {
+            return redirect()->route('admin.harilibur.index')->with('success', "Tidak ada hari libur baru yang perlu ditambahkan (semuanya sudah up-to-date).");
+        }
+    }
 }

@@ -3,7 +3,15 @@
 @section('title', 'Kalender Hari Libur')
 
 @section('content_header')
-    <h1>Manajemen Hari Libur Nasional & Khusus</h1>
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Manajemen Hari Libur Nasional & Khusus</h1>
+        <form action="{{ route('admin.harilibur.fetchAuto') }}" method="POST">
+            @csrf
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Proses ini akan menarik data Hari Libur Nasional (tanpa cuti bersama) untuk tahun ini dan tahun depan dari Internet. Lanjutkan?')">
+                <i class="fas fa-cloud-download-alt"></i> Tarik Tanggal Merah Otomatis
+            </button>
+        </form>
+    </div>
 @stop
 
 @section('content')
