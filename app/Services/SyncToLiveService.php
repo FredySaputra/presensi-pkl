@@ -135,6 +135,7 @@ class SyncToLiveService
                 'X-API-KEY' => $this->key,
                 'Accept' => 'application/json',
             ])
+            ->withoutVerifying()
             ->timeout(30)
             ->post(rtrim($this->url, '/') . $endpoint, $data);
 

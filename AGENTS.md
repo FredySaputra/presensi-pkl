@@ -1,95 +1,88 @@
 # Presensi PKL — Agent Guide
 
-## Project
+## Project Overview
 
-A Laravel 12 app for managing student attendance records during vocational internship (PKL).  
-**DB:** MySQL (`presensipkl`), **Session/Cache/Queue:** database driver.  
-**UI:** Laravel AdminLTE 3 (admin) + Tailwind/Alpine (public presensi page).
+A Laravel 12 application for managing student attendance records during vocational internship (PKL).
+- **Backend:** PHP 8.2+, Laravel 12
+- **Database:** MySQL (`presensipkl`), Session/Cache/Queue use `database` driver.
+- **Frontend:** Laravel AdminLTE 3 (Admin Panel) + Tailwind/Alpine (Public Presensi Page).
+- **Key Features:** Attendance tracking, Holiday management, PDF/Excel Exports, Data Synchronization to Live Server (via API/FTP).
 
-## Key packages
+## Directory Structure
 
-- `barryvdh/laravel-dompdf` — PDF reports
-- `maatwebsite/excel` — Excel export
-- `jeroennoten/laravel-adminlte` — admin panel theme
-- `laravel/breeze` (dev) — auth scaffolding
+```text
+D:\laragon\www\PresensiPKL\
+├── app/
+│   ├── Console/Commands/      # Artisan commands (e.g., SyncDataToLive.php)
+│   ├── Exports/               # Maatwebsite Excel exports
+│   ├── Http/Controllers/      # Application controllers
+│   │   ├── Admin/             # Admin panel logic (Sekolah, Siswa, Presensi, etc.)
+│   │   └── Auth/              # Authentication logic (Laravel Breeze)
+│   ├── Models/                # Eloquent models (Siswa, Sekolah, Presensi, HariLibur)
+│   ├── Services/              # Business logic (e.g., SyncToLiveService.php)
+│   └── View/Components/       # Blade components
+├── config/                    # Configuration files
+├── database/
+│   ├── migrations/            # Database schema definitions
+│   └── seeders/               # Database seeders (DatabaseSeeder, SekolahSeeder)
+├── public/                    # Compiled assets and public entry point
+├── resources/
+│   ├── css/ & js/             # Source assets (Vite)
+│   └── views/                 # Blade templates
+│       ├── admin/             # Admin views
+│       ├── auth/              # Auth views
+│       └── presensi/          # Public attendance views
+├── routes/                    # Route definitions (web.php, auth.php, console.php)
+├── storage/                   # App storage (logs, uploads, framework cache)
+└── tests/                     # Automated tests (Feature & Unit)
+```
 
-## Entrypoints
+## Key Packages
+
+- `barryvdh/laravel-dompdf` — PDF report generation.
+- `maatwebsite/excel` — Excel file exports.
+- `jeroennoten/laravel-adminlte` — Admin dashboard theme.
+- `laravel/breeze` — Authentication scaffolding.
+- `league/flysystem-ftp` — Required for FTP sync (must be installed if using FTP).
+
+## Recent Updates & Work History
+
+### 1. Front-end Date Validation (June 15, 2026)
+- **Problem:** Users could input a PKL end date earlier than the start date in the browser.
+- **Solution:** Added JavaScript logic to `siswa/create`, `siswa/edit`, and `harilibur/index`.
+- **Implementation:**
+  - "Selesai PKL" field is disabled until "Mulai PKL" is filled.
+  - Set `min` attribute on the end date field based on the start date.
+  - Auto-clears or adjusts the end date if the start date changes to a later value.
+
+### 2. Synchronization System
+- **Service:** `App\Services\SyncToLiveService` handles data sync to a monitoring system.
+- **Methods:** Supports both **HTTP API** and **FTP** (uploading JSON files).
+- **Error Note:** If "Class FtpAdapter not found" occurs, install `league/flysystem-ftp`.
+- **Guides:** See `API_INTEGRATION_GUIDE.md` for API specs and `.env` for configuration.
+
+## Entrypoints & Routes
 
 | Area | Route | Controller |
 |---|---|---|
-| Public presensi | `GET /` | `PresensiController@index` |
-| Public presensi (AJAX) | `GET /presensi/data` | `PresensiController@getAttendanceData` |
-| Admin (auth+verified) | `GET /admin/dashboard` | `Admin\DashboardController@index` |
-| Admin schools CRUD | `/admin/sekolah` | `Admin\SekolahController` |
-| Admin students CRUD | `/admin/siswa` | `Admin\SiswaController` |
-| Admin reports | `/admin/laporan` | `Admin\LaporanController` |
-| Admin attendance edit | `/admin/presensi/{id}/edit` | `Admin\PresensiController` |
-| Admin holidays | `/admin/harilibur` | `Admin\HariLiburController` |
+| Public Presensi | `GET /` | `PresensiController@index` |
+| Admin Dashboard | `GET /admin/dashboard` | `Admin\DashboardController@index` |
+| Admin Sekolah | `/admin/sekolah` | `Admin\SekolahController` |
+| Admin Siswa | `/admin/siswa` | `Admin\SiswaController` |
+| Admin Hari Libur | `/admin/harilibur` | `Admin\HariLiburController` |
+| Admin Laporan | `/admin/laporan` | `Admin\LaporanController` |
 
-## Models & key relationships
+## Quirks & Rules
 
-- **Sekolah** (school) → hasMany Siswa
-- **Siswa** (student, uses `SoftDeletes`) → belongsTo Sekolah, hasMany Presensi  
-  - `nama_siswa` is auto-UPPERCASED on save
-  - PKL period: `mulai_pkl` / `selesai_pkl`
-- **Presensi** (attendance) → belongsTo Siswa  
-  - Statuses: `Hadir`, `Telat`, `Izin`, `Pulang Cepat`, `Kurang`, `Alpa`
-  - `metode_izin`: `WA` or `Surat` (max 3x WA/month per student)
-- **User** → auth via `username` (not email), has `role` field
-- **HariLibur** (holiday) → per-sekolah
+- **Naming:** Student names are automatically converted to **UPPERCASE** via Eloquent mutators.
+- **Attendance Logic:** The same public endpoint handles check-in (masuk) and check-out (pulang) based on the current day's record existence.
+- **Holiday Scope:** Holidays can be global or specific to a school.
+- **Validation:** Always prefer adding both front-end (JS) and back-end (Laravel Request) validation for date ranges.
 
-## Dev commands
+## Dev Commands
 
 ```bash
-# Full dev server (PHP serve + queue + logs + Vite)
-composer dev
-
-# Run tests (config:clear first)
-composer test
-
-# Or directly
-php artisan test
-
-# Frontend build
-npm run build          # vite build
-npm run dev            # vite dev server
-
-# Laravel Pint (PSR-12 linter)
-./vendor/bin/pint
-
-# Codegen
-php artisan make:controller NameController
-php artisan make:model Name -m
-php artisan make:migration create_x_table
+composer dev           # Run serve, queue, logs, and vite concurrently
+composer test          # Clear config and run tests
+npm run build          # Build assets for production
 ```
-
-## Testing
-
-- PHPUnit 11 with SQLite `:memory:`
-- Tests under `tests/Unit/` and `tests/Feature/`
-- To run a single test: `php artisan test --filter=MethodName`
-- No integration-service dependencies (mail = array, queue = sync, cache = array)
-
-## Database & migrations
-
-- 14 migration files, run: `php artisan migrate`
-- Seed admin user: `php artisan db:seed`
-
-Default seeder creates one admin:
-- username: `fredyadmin1`, password: `spv12345`
-
-## Quirks & gotchas
-
-- **Session, cache, and queue all use `database` driver** — run `php artisan queue:work` for background jobs (dev command handles this)
-- **Student names are auto-UPPERCASED** via mutator on `Siswa.nama_siswa`
-- **Admin routes require `auth` + `verified`** middleware
-- **Public presensi page records check-in AND check-out** via the same endpoint (first call = masuk, second call = pulang)
-- **Excel export uses Maatwebsite/Laravel-Excel** (not PhpSpreadsheet directly)
-- **PDF uses DomPDF** with landscape A4
-- No CI/CD workflows configured
-
-## Export features
-
-- PDF: pivot/matrix report grouped by student per date (chunked 5 students/page)
-- Excel: flat list with computed lateness/early-leave notes
-- Both accept `tanggal_mulai`, `tanggal_selesai`, `sekolah_id` filters
