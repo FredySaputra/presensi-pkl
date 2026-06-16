@@ -41,13 +41,17 @@ class DashboardController extends Controller
                                   ->orderBy('jam_masuk', 'asc')
                                   ->get();
 
+        // Cek apakah hari ini libur
+        $isHoliday = \App\Models\HariLibur::whereDate('tanggal', $today)->exists();
+
         // Kirim semua data ke view
         return view('admin.dashboard', compact(
             'totalSiswaAktif',
             'jumlahHadir',
             'jumlahIzin',
             'jumlahAlpa',
-            'siswaTerlambat'
+            'siswaTerlambat',
+            'isHoliday'
         ));
     }
 }

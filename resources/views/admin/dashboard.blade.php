@@ -127,4 +127,40 @@
             </div>
         </div>
     </div>
+
+<script>
+    // JS Cronjob: Sinkronisasi Otomatis jam 09:45
+    (function() {
+        var isHoliday = {{ $isHoliday ? 'true' : 'false' }};
+        var hasSyncedToday = localStorage.getItem('last_auto_sync_date');
+        
+        function checkCron() {
+            var now = new Date();
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+            var dateStr = now.toISOString().split('T')[0];
+            
+            // Periksa jika jam 09:45
+            if (hours === 9 && minutes === 45) {
+                if (hasSyncedToday !== dateStr) {
+                    // Tandai sudah sync hari ini
+                    localStorage.setItem('last_auto_sync_date', dateStr);
+                    hasSyncedToday = dateStr;
+                    
+                    if (!isHoliday) {
+                        console.log("Menjalankan cronjob sinkronisasi jam 09:45...");
+                        // Trigger tombol sync
+                        window.location.href = "{{ route('admin.sync-live') }}";
+                    } else {
+                        console.log("Hari ini libur, membatalkan cronjob sinkronisasi.");
+                    }
+                }
+            }
+        }
+        
+        // Cek setiap 30 detik
+        setInterval(checkCron, 30000);
+        checkCron();
+    })();
+</script>
 @stop
