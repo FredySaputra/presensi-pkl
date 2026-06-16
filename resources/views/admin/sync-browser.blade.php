@@ -16,20 +16,28 @@
         <p>Mohon tunggu sebentar, Anda akan dialihkan secara otomatis.</p>
         <div class="loader"></div>
         
-        <form id="autoSyncForm" action="{{ $targetUrl }}" method="POST">
-            <input type="hidden" name="payload" value="{{ $payload }}">
-            <input type="hidden" name="api_key" value="{{ $apiKey }}">
-            <input type="hidden" name="redirect_url" value="{{ route('admin.dashboard') }}">
-        </form>
+        <iframe id="receiverFrame" src="{{ rtrim($targetUrl, '/all') . '/receiver' }}" style="display:none;"></iframe>
     </div>
 
     <script>
-        // Otomatis submit form setelah halaman dimuat
-        window.onload = function() {
-            setTimeout(function() {
-                document.getElementById('autoSyncForm').submit();
-            }, 500); // delay setengah detik agar user melihat animasi loading
+        var payloadObj = {
+            payload: {!! $payload !!},
+            api_key: "{{ $apiKey }}",
+            redirect_url: "{{ route('admin.dashboard') }}"
         };
+
+        var targetOrigin = new URL("{{ $targetUrl }}").origin;
+
+        window.addEventListener("message", function(event) {
+            if (event.data === "ready" && event.origin === targetOrigin) {
+                document.getElementById('receiverFrame').contentWindow.postMessage(payloadObj, targetOrigin);
+            }
+        });
+
+        // Fallback jika event ready tidak diterima (misal terhalang challenge Infinity Free sebentar)
+        setTimeout(function() {
+            document.getElementById('receiverFrame').contentWindow.postMessage(payloadObj, targetOrigin);
+        }, 5000); // Tunggu 5 detik untuk memastikan Infinity Free check selesai di iframe
     </script>
 </body>
 </html>
