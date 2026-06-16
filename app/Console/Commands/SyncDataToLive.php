@@ -32,21 +32,21 @@ class SyncDataToLive extends Command
         if ($syncService->syncStudents()) {
             $this->info('Siswa berhasil disinkronkan.');
         } else {
-            $this->error('Siswa gagal disinkronkan.');
+            $this->error('Siswa gagal disinkronkan. Detail: ' . $syncService->getLastError());
         }
 
         $this->comment('2. Sinkronisasi Data Hari Libur...');
         if ($syncService->syncHolidays()) {
             $this->info('Hari libur berhasil disinkronkan.');
         } else {
-            $this->error('Hari libur gagal disinkronkan.');
+            $this->error('Hari libur gagal disinkronkan. Detail: ' . $syncService->getLastError());
         }
 
         $this->comment('3. Sinkronisasi Data Kehadiran (Hadir, Izin, Sakit, Alpa)...');
         if ($syncService->syncAttendance()) {
             $this->info('Kehadiran berhasil disinkronkan.');
         } else {
-            $this->error('Kehadiran gagal disinkronkan.');
+            $this->error('Kehadiran gagal disinkronkan. Detail: ' . $syncService->getLastError());
         }
 
         $this->info('Sinkronisasi selesai.');

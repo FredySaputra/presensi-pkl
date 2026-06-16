@@ -13,6 +13,12 @@ class SyncToLiveService
 {
     protected $url;
     protected $key;
+    protected $lastError = null;
+
+    public function getLastError()
+    {
+        return $this->lastError;
+    }
 
     public function __construct()
     {
@@ -42,6 +48,7 @@ class SyncToLiveService
 
             return $this->sendRequest('/api/sync/students', ['students' => $students], 'students');
         } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
             Log::error("SyncToLive Siswa Error: " . $e->getMessage());
             return false;
         }
@@ -64,6 +71,7 @@ class SyncToLiveService
 
             return $this->sendRequest('/api/sync/holidays', ['holidays' => $holidays], 'holidays');
         } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
             Log::error("SyncToLive Libur Error: " . $e->getMessage());
             return false;
         }
@@ -105,6 +113,7 @@ class SyncToLiveService
 
             return $this->sendRequest('/api/sync/attendance', ['attendance' => $attendance], 'attendance');
         } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
             Log::error("SyncToLive Kehadiran Error: " . $e->getMessage());
             return false;
         }
@@ -126,6 +135,7 @@ class SyncToLiveService
 
         Log::info("SyncToLive: Mencoba sinkronisasi via HTTP ($type)...");
         if (!$this->url || !$this->key) {
+            $this->lastError = "URL atau API Key belum dikonfigurasi.";
             Log::warning("SyncToLive: URL atau API Key belum dikonfigurasi.");
             return false;
         }
@@ -144,9 +154,11 @@ class SyncToLiveService
                 return true;
             }
 
+            $this->lastError = "HTTP Error " . $response->status() . ": " . $response->body();
             Log::error("SyncToLive HTTP Gagal: (" . $response->status() . ") " . $response->body());
             return false;
         } catch (\Exception $e) {
+            $this->lastError = "HTTP Exception: " . $e->getMessage();
             Log::error("SyncToLive HTTP Exception: " . $e->getMessage());
             return false;
         }
@@ -171,12 +183,15 @@ class SyncToLiveService
                 return true;
             }
 
+            $this->lastError = "Gagal menulis file $fileName ke server FTP.";
             Log::error("SyncToLive FTP Gagal: Gagal menulis file $fileName ke server.");
             return false;
         } catch (\Exception $e) {
+            $this->lastError = "FTP Exception: " . $e->getMessage();
             Log::error("SyncToLive FTP Exception: " . $e->getMessage());
             // Berikan detail lebih lanjut jika itu adalah error koneksi
             if (str_contains($e->getMessage(), 'Could not connect')) {
+                $this->lastError .= " (Koneksi FTP ditolak atau host tidak ditemukan.)";
                 Log::error("Detail: Koneksi FTP ditolak atau host tidak ditemukan.");
             }
             return false;
