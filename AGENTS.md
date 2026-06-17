@@ -18,13 +18,19 @@ Since standard OS cronjobs cannot bypass the Infinity Free AES challenge, an aut
 - **Logic:** An interval checks the time every 30 seconds. If the local time hits **09:45 AM**, and today is **not a holiday** (`$isHoliday` flag passed from `DashboardController`), it automatically redirects to `admin.sync-live` which opens the popup to push the data.
 - **Prerequisite:** The `PresensiPKL` Admin Dashboard must be kept open on the admin's computer for the cronjob to fire.
 
-### 3. Automated Public Holiday Fetching
+### 3. Fully Automated Browser Sync (Puppeteer)
+To solve the prerequisite that the Admin Dashboard must be kept open, a Node.js Puppeteer script was created.
+- **Location:** `automation/auto_sync.js`
+- **Logic:** The script is triggered via Windows Task Scheduler at **09:43 AM**. It opens a visible Chrome browser (to bypass AES), navigates to the login page, authenticates as admin, and waits on the dashboard. At 09:45 AM, the Javascript Cronjob triggers the popup sync. The script waits until the success redirect occurs, then securely logs out and closes the browser.
+- **Setup:** A batch file `automation/run_sync.bat` is provided to easily link with Windows Task Scheduler.
+
+### 4. Automated Public Holiday Fetching
 The user requested automatic generation of public holidays (Tanggal Merah) to avoid manual data entry.
 - **Solution Implemented:** Integration with a public GitHub JSON API (`https://raw.githubusercontent.com/guangrei/APIHariLibur_V2/main/calendar.json`).
 - **File modified:** `app/Http/Controllers/Admin/HariLiburController.php` (`fetchAuto` method).
 - **Logic:** Retrieves holidays for the current and next year. It rigorously filters out "Cuti Bersama" (collective leave) by checking the strings. Valid "Hari Libur Nasional" are inserted into the local `HariLibur` model. This can be triggered manually via a button in the UI (`admin/harilibur/index.blade.php`).
 
-### 4. Application Folder Structure
+### 5. Application Folder Structure
 ```
 D:\laragon\www\PresensiPKL
 ├── app/
@@ -41,6 +47,10 @@ D:\laragon\www\PresensiPKL
 │   │   └── Sekolah.php
 │   ├── Services/
 │   │   └── SyncToLiveService.php (Deprecated API approaches kept for reference)
+├── automation/
+│   ├── auto_sync.js (Puppeteer script for unattended login and sync)
+│   ├── package.json
+│   └── run_sync.bat
 ├── resources/
 │   ├── views/admin/
 │   │   ├── dashboard.blade.php (Contains JS Cronjob logic)
@@ -51,7 +61,7 @@ D:\laragon\www\PresensiPKL
 └── ...
 ```
 
-### 5. Tech Stack & Dependencies
+### 6. Tech Stack & Dependencies
 - **Framework:** Laravel 12.0 (`php: ^8.2`)
 - **Key Packages:**
   - `barryvdh/laravel-dompdf` (^3.1): For generating PDF reports.
