@@ -207,7 +207,7 @@
                             <label class="d-block">Metode Izin:</label>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="metode_izin" id="metode_wa" value="WA" checked>
-                                <label class="form-check-label" for="metode_wa">WhatsApp (Maksimal 3x/Bulan)</label>
+                                <label class="form-check-label" for="metode_wa">WhatsApp (Maksimal 3x/Masa Aktif PKL)</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="metode_izin" id="metode_surat" value="Surat">

@@ -73,3 +73,9 @@ D:\laragon\www\PresensiPKL
 - **DO NOT** attempt to replace the Popup synchronization mechanism with cURL, Guzzle, or HTTP Client. Infinity Free will return a `403 Forbidden` or `html/javascript` math challenge.
 - **DO NOT** attempt to use FTP/SFTP sync from within this app while it is connected to the campus network, as port 21 is blocked.
 - If you need to debug the sync payload, check `sync-browser.blade.php` and the Javascript `localStorage.getItem('sync_payload')`.
+
+### 7. WhatsApp Leave (Izin WA) Limit Update
+- **Change Implemented:** The limit for submitting an absence via WhatsApp has been changed from "3 times per month" to "3 times per PKL active period" (masa aktif PKL).
+- **Files Modified:** 
+  - `app/Http/Controllers/Admin/LaporanController.php`: Removed the `whereMonth` and `whereYear` constraints when counting `Izin WA` usages.
+  - `resources/views/admin/laporan/index.blade.php`: Updated the UI label to state `Maksimal 3x/Masa Aktif PKL`.

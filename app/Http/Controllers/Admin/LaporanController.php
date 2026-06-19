@@ -55,7 +55,7 @@ class LaporanController extends Controller
 
     /**
      * API untuk AJAX: Mengambil siswa yang belum presensi dan aktif pada tanggal tertentu.
-     * Mengembalikan juga jumlah izin WA yang sudah digunakan bulan ini.
+     * Mengembalikan juga jumlah izin WA yang sudah digunakan selama masa aktif PKL.
      */
     public function getSiswaTanpaPresensi(Request $request)
     {
@@ -84,8 +84,6 @@ class LaporanController extends Controller
             ->get()
             ->map(function ($siswa) use ($bulanIni, $tahunIni) {
                 $jumlahIzinWA = Presensi::where('siswa_id', $siswa->id)
-                    ->whereMonth('tanggal', $bulanIni)
-                    ->whereYear('tanggal', $tahunIni)
                     ->where('status', 'Izin')
                     ->where('metode_izin', 'WA')
                     ->count();
@@ -148,14 +146,12 @@ class LaporanController extends Controller
 
                 if ($request->metode_izin == 'WA') {
                     $jumlahIzinWA = Presensi::where('siswa_id', $siswaId)
-                        ->whereMonth('tanggal', $bulan)
-                        ->whereYear('tanggal', $tahun)
                         ->where('status', 'Izin')
                         ->where('metode_izin', 'WA')
                         ->count();
 
                     if ($jumlahIzinWA >= 3) {
-                        $errorMessages[] = "Siswa {$siswa->nama_siswa} pada tanggal {$dateString} tidak bisa dicatat (Batas 3x WA bulan ini tercapai).";
+                        $errorMessages[] = "Siswa {$siswa->nama_siswa} pada tanggal {$dateString} tidak bisa dicatat (Batas 3x WA per masa aktif PKL tercapai).";
                         $currentDate->addDay();
                         continue;
                     }
